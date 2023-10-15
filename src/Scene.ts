@@ -4,6 +4,7 @@ export class Scene {
     public static scene: THREE.Scene;
     public static camera: THREE.PerspectiveCamera;
     public static renderer: THREE.WebGLRenderer;
+    public static globalLight: THREE.AmbientLight;
 
     static initScene(): void {
         Scene.scene = new THREE.Scene();
@@ -13,13 +14,15 @@ export class Scene {
 
         Scene.renderer = new THREE.WebGLRenderer({
             canvas: document.querySelector('#bg')!,
+            antialias: true,
             logarithmicDepthBuffer: true
         });
         Scene.renderer.setPixelRatio(window.devicePixelRatio);
         Scene.renderer.setSize(window.innerWidth, window.innerHeight);
         Scene.renderer.render(Scene.scene, Scene.camera);
 
-        Scene.scene.add(new THREE.AmbientLight(0xFFFFFF));
+        Scene.globalLight = new THREE.AmbientLight(0xFFFFFF);
+        Scene.scene.add(Scene.globalLight);
     }
 
     static renderScene() {

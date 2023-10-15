@@ -1,70 +1,91 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { Flag } from './Flag.ts';
 import { Scene } from './Scene.ts';
+import { Utils } from './Utils.ts';
 
 export class Planet {
 
-    private planetModel: THREE.Group<THREE.Object3DEventMap>;
+    private radius: number;
+    private planetMesh: THREE.Mesh;
     private ringMeshes: THREE.Mesh[];
+    private flag: Flag | null;
 
-    constructor(modelPath: string, scale: THREE.Vector3,
+    constructor(imgPath: string, radius: number,
             position: THREE.Vector3) {
-        this.planetModel = new THREE.Group<THREE.Object3DEventMap>();
+        this.radius = radius;
 
-        new GLTFLoader().load(modelPath, ( gltf ) => {
-            this.planetModel = gltf.scene;
-            this.planetModel.scale.copy(scale);
-            this.planetModel.position.copy(position);
-
-            Scene.addEntity(this.planetModel);
-        });
-
-        this.planetModel.scale.copy(scale);
-        this.planetModel.position.copy(position);
+        let nVerticles = Math.max(64, radius / 4);
+        nVerticles = Math.min(160, nVerticles);
+        this.planetMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(radius, nVerticles, nVerticles),
+            new THREE.MeshBasicMaterial({
+                map: Utils.textureLoader.load(imgPath),
+                side: THREE.FrontSide
+            })
+        );
+        this.planetMesh.position.copy(position);
+        Scene.addEntity(this.planetMesh);
+        
         this.ringMeshes = [];
+        this.flag = null;
     }
 
-    addRing(size: number, length: number, texturePath: string | null,
+    addRing(start: number, length: number, texturePath: string | null,
                 colorV: number | null): void {
-        let ringMesh;
+        let tStart = start + this.radius;
+
+        let nVerticles = Math.max(64, (tStart + length) / 4);
+        nVerticles = Math.min(160, nVerticles);
+        let ringMesh: THREE.Mesh | null = null;
         if (colorV != null) {
             ringMesh = new THREE.Mesh(
-                new THREE.RingGeometry(size,
-                    size + length / this.planetModel.scale.x, 64),
-                new THREE.MeshStandardMaterial({
+                new THREE.RingGeometry(tStart, tStart + length, nVerticles),
+                new THREE.MeshBasicMaterial({
                     color: colorV,
                     side: THREE.DoubleSide
                 })
             ); 
-        } else {
+        }
+        if (texturePath != null) {
             ringMesh = new THREE.Mesh(
-                new THREE.RingGeometry(size,
-                size + length / this.planetModel.scale.x, 64),
+                new THREE.RingGeometry(tStart, tStart + length, nVerticles),
                 new THREE.MeshBasicMaterial({
-                map: new THREE.TextureLoader().load(texturePath!),
-                side: THREE.DoubleSide
+                    map: Utils.textureLoader.load(texturePath),
+                    side: THREE.DoubleSide
                 })
             );
         }
-        this.planetModel.getWorldPosition(ringMesh.position);
-        this.planetModel.getWorldScale(ringMesh.scale);
-        ringMesh.rotation.set(THREE.MathUtils.randFloat(0, 2 * Math.PI),
-            THREE.MathUtils.randFloat(0, 2 * Math.PI),
-            THREE.MathUtils.randFloat(0, 2 * Math.PI));
-        
-        Scene.addEntity(ringMesh);
-        this.ringMeshes.push(ringMesh);
+
+        if (ringMesh != null) {
+            this.planetMesh.getWorldPosition(ringMesh.position);
+            ringMesh.rotation.set(THREE.MathUtils.randFloat(0, 2 * Math.PI),
+                THREE.MathUtils.randFloat(0, 2 * Math.PI),
+                THREE.MathUtils.randFloat(0, 2 * Math.PI));
+            Scene.addEntity(ringMesh);
+            this.ringMeshes.push(ringMesh);
+        }
+    }
+
+    setFlag(flag: Flag): void {
+        this.flag = flag;
+        let flagPosition = this.planetMesh.position.clone();
+        flagPosition.y += this.radius - 10;
+        this.flag.setPositionFromDown(flagPosition);
     }
     
     updateFrame(): void {
-        this.planetModel.rotation.x += 0.001;
-        this.planetModel.rotation.y += 0.0016;
-        this.planetModel.rotation.z += 0.001;
+        this.planetMesh.rotation.x += 0.001;
+        this.planetMesh.rotation.y += 0.0016;
+        this.planetMesh.rotation.z += 0.001;
     
         for (const currRingMesh of this.ringMeshes) {
             currRingMesh.rotation.x += THREE.MathUtils.randFloat(0.002, 0.012);
             currRingMesh.rotation.y += THREE.MathUtils.randFloat(0.002, 0.012);
             currRingMesh.rotation.z += THREE.MathUtils.randFloat(0.002, 0.012);
+        }
+
+        if (this.flag != null) {
+            this.flag.updateFrame();
         }
     }
 

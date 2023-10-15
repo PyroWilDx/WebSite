@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Planet } from './Planet.ts';
 import { Scene } from './Scene.ts';
 import { Star } from './Star.ts';
@@ -19,18 +18,18 @@ export class Galaxy {
     addBackground(radius: number, backgroundPath: string) {
         this.radius = radius;
 
-        const backgroundGeometry = new THREE.SphereGeometry(this.radius, 100, 100);
-        const backgroundTexture = new THREE.TextureLoader().load(backgroundPath);
-        const backgroundMaterial = new THREE.MeshBasicMaterial({ 
-          map: backgroundTexture,
-          side: THREE.BackSide
-        });
-        const backgroundMesh = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+        let backgroundMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(this.radius, 160, 160),
+            new THREE.MeshBasicMaterial({ 
+                map: Utils.textureLoader.load(backgroundPath),
+                side: THREE.BackSide
+              })
+        );
         Scene.addEntity(backgroundMesh);
     }
 
     addStars(nStars: number, modelPath: string): void {
-        new GLTFLoader().load(modelPath, ( gltf ) => {
+        Utils.gltfLoader.load(modelPath, ( gltf ) => {
             let baseStarModel = gltf.scene;
             for (let i = 0; i < nStars; i++) {
                 let currStar: Star = new Star(baseStarModel.clone(),
