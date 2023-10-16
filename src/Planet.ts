@@ -65,13 +65,6 @@ export class Planet {
             this.ringMeshes.push(ringMesh);
         }
     }
-
-    setFlag(flag: Flag): void {
-        this.flag = flag;
-        let flagPosition = this.planetMesh.position.clone();
-        flagPosition.y += this.radius - 10;
-        this.flag.setPositionFromDown(flagPosition);
-    }
     
     updateFrame(): void {
         this.planetMesh.rotation.x += 0.001;
@@ -87,6 +80,17 @@ export class Planet {
         if (this.flag != null) {
             this.flag.updateFrame();
         }
+    }
+
+    setFlag(flag: Flag): void {
+        this.flag = flag;
+        let flagPosition = this.planetMesh.position.clone();
+        flagPosition.y += this.radius - 10;
+        this.flag.setPositionFromDown(flagPosition);
+    }
+
+    getFlag(): Flag | null {
+        return this.flag;
     }
 
 }

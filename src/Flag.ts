@@ -88,4 +88,8 @@ export class Flag {
         this.flagMesh.geometry.attributes.position.needsUpdate = true;
     }
 
+    getMesh(): THREE.Mesh {
+        return this.flagMesh;
+    } 
+
 }

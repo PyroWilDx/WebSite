@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import { Flag } from './Flag.ts';
 import { Planet } from './Planet.ts';
+import { Player } from './Player.ts';
 import { Scene } from './Scene.ts';
 import { Star } from './Star.ts';
 import { Utils } from './Utils.ts';
@@ -8,16 +10,16 @@ export class Galaxy {
     private radius: number;
     private allStars: Star[];
     private allPlanets: Planet[];
+    private rocket: Player | null;
 
-    constructor() {
-        this.radius = 0;
+    constructor(radius: number, ) {
+        this.radius = radius;
         this.allStars = [];
         this.allPlanets = [];
+        this.rocket = null;
     }
 
-    addBackground(radius: number, backgroundPath: string) {
-        this.radius = radius;
-
+    addBackgroundImg(backgroundPath: string) {
         let backgroundMesh = new THREE.Mesh(
             new THREE.SphereGeometry(this.radius, 160, 160),
             new THREE.MeshBasicMaterial({ 
@@ -46,6 +48,31 @@ export class Galaxy {
         this.allPlanets.push(planet);
     }
 
+    setRocket(rocket: Player) {
+        this.rocket = rocket;
+    }
+
+    getAllFlagsMesh(): THREE.Object3D[] {
+        let flags: THREE.Object3D[] = [];
+        for (const currPlanet of this.allPlanets) {
+            let flag = currPlanet.getFlag();
+            if (flag != null) flags.push(flag.getMesh());
+        }
+        return flags;
+    }
+
+    getFlagFromMesh(flagMesh: THREE.Mesh): Flag | null {
+        for (const currPlanet of this.allPlanets) {
+            let flag = currPlanet.getFlag();
+            if (flag != null) {
+                if (flag.getMesh() === flagMesh) {
+                    return flag;
+                }
+            }
+        }
+        return null;
+    }
+
     updateFrame(): void {
         for (const currStar of this.allStars) {
             currStar.updateFrame();
@@ -53,5 +80,6 @@ export class Galaxy {
         for (const currPlanet of this.allPlanets) {
             currPlanet.updateFrame();
         }
+        if (this.rocket != null) this.rocket.updateFrame();
     }
 }

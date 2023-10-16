@@ -1,4 +1,4 @@
-Planet Map Texture Instead of 3D Model
+Sinus Fly
 
 Class for Planet Rings.
 
