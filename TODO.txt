@@ -1,3 +1,5 @@
+IF TOO FAR AWAY, GO TO OVERVIEW
+
 Sinus Fly
 
 Class for Planet Rings.

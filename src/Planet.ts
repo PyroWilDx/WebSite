@@ -11,21 +11,24 @@ export class Planet {
     private flag: Flag | null;
 
     constructor(imgPath: string, radius: number,
-            position: THREE.Vector3) {
+            position: THREE.Vector3, emissiveIntensity: number = 0,
+            emissiveColor: THREE.ColorRepresentation = 0x0) {
         this.radius = radius;
 
         let nVerticles = Math.max(64, radius / 4);
         nVerticles = Math.min(160, nVerticles);
         this.planetMesh = new THREE.Mesh(
             new THREE.SphereGeometry(radius, nVerticles, nVerticles),
-            new THREE.MeshBasicMaterial({
+            new THREE.MeshStandardMaterial({
                 map: Utils.textureLoader.load(imgPath),
-                side: THREE.FrontSide
+                side: THREE.FrontSide,
+                emissiveIntensity: emissiveIntensity,
+                emissive: emissiveColor,
             })
         );
         this.planetMesh.position.copy(position);
         Scene.addEntity(this.planetMesh);
-        
+
         this.ringMeshes = [];
         this.flag = null;
     }
@@ -40,7 +43,7 @@ export class Planet {
         if (colorV != null) {
             ringMesh = new THREE.Mesh(
                 new THREE.RingGeometry(tStart, tStart + length, nVerticles),
-                new THREE.MeshBasicMaterial({
+                new THREE.MeshStandardMaterial({
                     color: colorV,
                     side: THREE.DoubleSide
                 })
@@ -49,7 +52,7 @@ export class Planet {
         if (texturePath != null) {
             ringMesh = new THREE.Mesh(
                 new THREE.RingGeometry(tStart, tStart + length, nVerticles),
-                new THREE.MeshBasicMaterial({
+                new THREE.MeshStandardMaterial({
                     map: Utils.textureLoader.load(texturePath),
                     side: THREE.DoubleSide
                 })

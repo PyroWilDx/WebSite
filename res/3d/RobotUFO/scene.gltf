@@ -15,7 +15,13 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"Export_for_maya_polygon_increase:pSphere15_lambert1_0"
+			"name":"Export_for_maya_polygon_increase:pSphere15_lambert1_0",
+			"rotation":[
+				0,
+				0.39689016342163086,
+				0,
+				0.9178661108016968
+			]
 		},
 		{
 			"children":[
@@ -142,29 +148,29 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":45109,
+			"count":45117,
 			"max":[
-				596.7716064453125,
-				303.1083984375,
-				594.3557739257812
+				596.7711791992188,
+				303.1275634765625,
+				594.3552856445312
 			],
 			"min":[
-				-600.7890625,
-				-153.4785919189453,
-				-589.0966186523438
+				-600.7894897460938,
+				-153.4594268798828,
+				-589.0971069335938
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":45109,
+			"count":45117,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":45109,
+			"count":45117,
 			"type":"VEC2"
 		},
 		{
@@ -177,26 +183,26 @@
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":541308,
+			"byteLength":541404,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":541308,
-			"byteOffset":541308,
+			"byteLength":541404,
+			"byteOffset":541404,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":360872,
-			"byteOffset":1082616,
+			"byteLength":360936,
+			"byteOffset":1082808,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":384384,
-			"byteOffset":1443488,
+			"byteOffset":1443744,
 			"target":34963
 		}
 	],
@@ -208,7 +214,7 @@
 	],
 	"buffers":[
 		{
-			"byteLength":1827872,
+			"byteLength":1828128,
 			"uri":"scene.bin"
 		}
 	]

@@ -9,6 +9,7 @@ export class Player {
 
     private playerModel: THREE.Group<THREE.Object3DEventMap> | null;
     private playerSpeed: THREE.Vector3;
+    private playerLight: THREE.PointLight;
 
     constructor(position: THREE.Vector3, scale: number, modelPath: string) {
         this.playerModel = null;
@@ -18,25 +19,43 @@ export class Player {
             this.playerModel = gltf.scene;
             this.playerModel.position.copy(position);
             this.playerModel.scale.set(scale, scale, scale);
+            Utils.setEmissiveIntensityToGLTF(this.playerModel, 200);
             Scene.addEntity(this.playerModel);
         });
+
+        this.playerLight = new THREE.PointLight(0xFFFFFF,
+            6000, 0, 1.6);
+        this.playerLight.position.copy(position);
+        Scene.addEntity(this.playerLight);
     }
 
     addPositionX(x: number): void {
-        if (this.playerModel != null) this.playerModel.position.x += x;
+        if (this.playerModel != null) {
+            this.playerModel.position.x += x;
+            // this.playerLight.position.x += x;
+            // this.playerLight.target.position.x += x;
+        }
     }
 
     addPositionY(y: number): void {
-        if (this.playerModel != null) this.playerModel.position.y += y;
+        if (this.playerModel != null) {
+            this.playerModel.position.y += y;
+            // this.playerLight.position.y += y;
+            // this.playerLight.target.position.y += y;
+        }
     }
 
     addPositionZ(z: number): void {
-        if (this.playerModel != null) this.playerModel.position.z += z;
+        if (this.playerModel != null) {
+            this.playerModel.position.z += z;
+            // this.playerLight.position.z += z;
+            // this.playerLight.target.position.z += z;
+        }
     }
 
     updateFrame(): void {
         if (this.playerModel != null) {
-            this.playerModel.rotation.y += 0.01;
+            // this.playerModel.rotation.y += 0.01;
 
             if (Utils.isKeyPressed('z') || Utils.isKeyPressed('Z')) {
                 this.addPositionZ(-this.playerSpeed.z);
@@ -58,11 +77,14 @@ export class Player {
             }
 
             let playerPosition = this.playerModel.position;
-            Scene.setCameraPosition(
-                new THREE.Vector3(
-                    playerPosition.x + Player.cameraXDist, 
-                    playerPosition.y + Player.cameraYDist,
-                    playerPosition.z + Player.cameraZDist));
+            
+            this.playerLight.position.copy(playerPosition);
+
+            // Scene.setCameraPosition(
+            //     new THREE.Vector3(
+            //         playerPosition.x + Player.cameraXDist, 
+            //         playerPosition.y + Player.cameraYDist,
+            //         playerPosition.z + Player.cameraZDist));
         }
     }
 

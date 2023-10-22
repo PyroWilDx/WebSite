@@ -10,19 +10,20 @@ export class Galaxy {
     private radius: number;
     private allStars: Star[];
     private allPlanets: Planet[];
-    private rocket: Player | null;
+    private player: Player | null;
+    private currFlag: Flag | null = null;
 
     constructor(radius: number, ) {
         this.radius = radius;
         this.allStars = [];
         this.allPlanets = [];
-        this.rocket = null;
+        this.player = null;
     }
 
     addBackgroundImg(backgroundPath: string) {
         let backgroundMesh = new THREE.Mesh(
             new THREE.SphereGeometry(this.radius, 160, 160),
-            new THREE.MeshBasicMaterial({ 
+            new THREE.MeshStandardMaterial({ 
                 map: Utils.textureLoader.load(backgroundPath),
                 side: THREE.BackSide
               })
@@ -33,6 +34,7 @@ export class Galaxy {
     addStars(nStars: number, modelPath: string): void {
         Utils.gltfLoader.load(modelPath, ( gltf ) => {
             let baseStarModel = gltf.scene;
+            Utils.setEmissiveIntensityToGLTF(baseStarModel, 50);
             for (let i = 0; i < nStars; i++) {
                 let currStar: Star = new Star(baseStarModel.clone(),
                     THREE.MathUtils.randFloat(0.004, 0.02),
@@ -49,7 +51,7 @@ export class Galaxy {
     }
 
     setRocket(rocket: Player) {
-        this.rocket = rocket;
+        this.player = rocket;
     }
 
     getAllFlagsMesh(): THREE.Object3D[] {
@@ -73,6 +75,26 @@ export class Galaxy {
         return null;
     }
 
+    rayCastFlags(): void {
+        Utils.rayCaster.setFromCamera(Utils.mousePosition, Scene.camera);
+        const intersected = Utils.rayCaster.intersectObjects(this.getAllFlagsMesh());
+        if (intersected.length > 0) {
+            const obj = intersected[0].object;
+            if (obj instanceof THREE.Mesh) {
+                if (this.currFlag != null) this.currFlag.glowEffect(false);
+
+                let flagMesh = obj as THREE.Mesh;                
+                this.currFlag = this.getFlagFromMesh(flagMesh);
+                if (this.currFlag != null) this.currFlag.glowEffect(true);
+                return;
+            }
+        }
+        if (this.currFlag != null) {
+            this.currFlag.glowEffect(false);
+            this.currFlag = null;
+        }
+    }
+
     updateFrame(): void {
         for (const currStar of this.allStars) {
             currStar.updateFrame();
@@ -80,6 +102,6 @@ export class Galaxy {
         for (const currPlanet of this.allPlanets) {
             currPlanet.updateFrame();
         }
-        if (this.rocket != null) this.rocket.updateFrame();
+        if (this.player != null) this.player.updateFrame();
     }
 }

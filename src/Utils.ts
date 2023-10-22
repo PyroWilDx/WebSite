@@ -1,15 +1,12 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Flag } from './Flag';
-import { Galaxy } from './Galaxy';
-import { Scene } from './Scene';
 import './style.css';
 
 export class Utils {
 
     private constructor() {}
 
-    public static readonly worldRadius: number = 1000;
+    public static readonly worldRadius: number = 2000;
 
     public static readonly clock: THREE.Clock = new THREE.Clock();
     public static readonly rayCaster: THREE.Raycaster = new THREE.Raycaster();
@@ -21,7 +18,7 @@ export class Utils {
     public static lastMousePosition: THREE.Vector2 = new THREE.Vector2(0, 0);
     public static mousePosition: THREE.Vector2 = new THREE.Vector2(0, 0);
     public static keyMap: { [key: string]: boolean } = {};
-
+    
     static getRandomVector3Spread(value: number): THREE.Vector3 {
         let randomVec: THREE.Vector3 = new THREE.Vector3();
         randomVec.x = THREE.MathUtils.randFloatSpread(value);
@@ -57,17 +54,16 @@ export class Utils {
         return this.keyMap[key];
     }
 
-    static rayCastFlags(galaxy: Galaxy): Flag | null {
-        Utils.rayCaster.setFromCamera(Utils.mousePosition, Scene.camera);
-        const intersected = Utils.rayCaster.intersectObjects(galaxy.getAllFlagsMesh());
-        if (intersected.length > 0) {
-            const obj = intersected[0].object;
-            if (obj instanceof THREE.Mesh) {
-                let flagMesh = obj as THREE.Mesh;
-                return galaxy.getFlagFromMesh(flagMesh);
+    static setEmissiveIntensityToGLTF(gltfModel: THREE.Group<THREE.Object3DEventMap>,
+            intensityValue: number): void {
+        gltfModel.traverse((object: THREE.Object3D) => {
+            if (object.isMesh) {
+                let material = object.material;
+                if (material.emissive) {
+                    material.emissiveIntensity = intensityValue;
+                }
             }
-        }
-        return null;
+        })
     }
 
 }

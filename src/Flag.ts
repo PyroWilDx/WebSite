@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import flagGlowFragmentShader from './../res/shaders/flagGlowFragment.glsl';
+import flagGlowVertexShader from './../res/shaders/flagGlowVertex.glsl';
 import { Scene } from './Scene';
 import { Utils } from './Utils';
 
@@ -10,6 +12,8 @@ export class Flag {
     private flagStickRadius: number;
     private flagStickH: number;
     private flagStickMesh: THREE.Mesh;
+    private flagGlowLight: THREE.PointLight;
+    private flagGlowMesh: THREE.Mesh;
     private halfFlagW: number;
     private AX1: number;
     private DX1: number;
@@ -24,11 +28,14 @@ export class Flag {
         flagStickRadius: number, flagStickH: number, flagStickColor: number,) {
         this.flagW = flagW;
         this.flagH = flagH;
+        
+        let flagTexture = Utils.textureLoader.load(flagImgPath);
         this.flagMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(flagW, flagH, flagW, flagH),
-            new THREE.MeshBasicMaterial({
-                map: Utils.textureLoader.load(flagImgPath),
-                side: THREE.DoubleSide
+            new THREE.MeshStandardMaterial({
+                map: flagTexture,
+                side: THREE.DoubleSide,
+                emissiveMap: flagTexture
             })
         );
         Scene.scene.add(this.flagMesh);
@@ -38,12 +45,25 @@ export class Flag {
         this.flagStickMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(flagStickRadius, flagStickRadius,
                 flagStickH, 32, 32),
-            new THREE.MeshBasicMaterial({
+            new THREE.MeshStandardMaterial({
                 color: flagStickColor,
                 side: THREE.FrontSide
             })
         )
         Scene.scene.add(this.flagStickMesh);
+
+        this.flagGlowLight = new THREE.PointLight(0xFFFFFF, 10000);
+
+        this.flagGlowMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(this.flagW, this.flagH, 32, 32),
+            new THREE.ShaderMaterial({
+                vertexShader: flagGlowVertexShader,
+                fragmentShader: flagGlowFragmentShader,
+                side: THREE.DoubleSide
+            })
+        );
+        const glowScale = 1.12;
+        this.flagGlowMesh.scale.set(glowScale, glowScale, glowScale);
 
         this.halfFlagW = this.flagW / 2;
 
@@ -58,7 +78,17 @@ export class Flag {
         this.DY2 = 3.02 / ratio;
     }
 
-    setPositionFromDown(position: THREE.Vector3) {
+    glowEffect(start: boolean): void {
+        if (start) {
+            Scene.addEntity(this.flagGlowLight);
+            Scene.addEntity(this.flagGlowMesh);
+        } else {
+            Scene.removeEntity(this.flagGlowLight);
+            Scene.removeEntity(this.flagGlowMesh);
+        }
+    }
+
+    setPositionFromDown(position: THREE.Vector3): void {
         let flagPosition = position.clone();
         let flagStickPosition = position.clone();
         flagPosition.y += this.flagStickH - this.flagH / 2;
@@ -66,6 +96,8 @@ export class Flag {
         flagStickPosition.y += this.flagStickH / 2;
         this.flagMesh.position.copy(flagPosition);
         this.flagStickMesh.position.copy(flagStickPosition);
+        this.flagGlowLight.position.copy(flagPosition);
+        this.flagGlowMesh.position.copy(flagPosition);
     }
 
     updateFrame(): void {
