@@ -1,19 +1,27 @@
 import * as THREE from 'three';
 import flagGlowFragmentShader from './../res/shaders/flagGlowFragment.glsl';
 import flagGlowVertexShader from './../res/shaders/flagGlowVertex.glsl';
+import { GetLookedInterface } from './ObjectLookedInterface';
 import { Scene } from './Scene';
 import { Utils } from './Utils';
 
-export class Flag {
+export class Flag implements GetLookedInterface {
+    public static readonly projSectionId: string = "ProjSection";
 
     private flagW: number;
     private flagH: number;
     private flagMesh: THREE.Mesh;
+
     private flagStickRadius: number;
     private flagStickH: number;
+    private flagStickColor: number;
     private flagStickMesh: THREE.Mesh;
+
     private flagGlowLight: THREE.PointLight;
     private flagGlowMesh: THREE.Mesh;
+
+    private flagProjectSectionId: string;
+
     private halfFlagW: number;
     private AX1: number;
     private DX1: number;
@@ -25,7 +33,8 @@ export class Flag {
     private DY2: number; 
 
     constructor(flagW: number, flagH: number, flagImgPath: string,
-        flagStickRadius: number, flagStickH: number, flagStickColor: number,) {
+        flagStickRadius: number, flagStickH: number, flagStickColor: number,
+        projSectionId: string) {
         this.flagW = flagW;
         this.flagH = flagH;
         
@@ -35,13 +44,15 @@ export class Flag {
             new THREE.MeshStandardMaterial({
                 map: flagTexture,
                 side: THREE.DoubleSide,
-                emissiveMap: flagTexture
+                emissiveMap: flagTexture,
+                emissiveIntensity: 0.46
             })
         );
         Scene.scene.add(this.flagMesh);
 
         this.flagStickRadius = flagStickRadius;
         this.flagStickH = flagStickH;
+        this.flagStickColor = flagStickColor;
         this.flagStickMesh = new THREE.Mesh(
             new THREE.CylinderGeometry(flagStickRadius, flagStickRadius,
                 flagStickH, 32, 32),
@@ -52,7 +63,7 @@ export class Flag {
         )
         Scene.scene.add(this.flagStickMesh);
 
-        this.flagGlowLight = new THREE.PointLight(0xFFFFFF, 10000);
+        this.flagGlowLight = new THREE.PointLight(0xFFFFFF, 1000);
 
         this.flagGlowMesh = new THREE.Mesh(
             new THREE.PlaneGeometry(this.flagW, this.flagH, 32, 32),
@@ -64,6 +75,8 @@ export class Flag {
         );
         const glowScale = 1.12;
         this.flagGlowMesh.scale.set(glowScale, glowScale, glowScale);
+
+        this.flagProjectSectionId = projSectionId;
 
         this.halfFlagW = this.flagW / 2;
 
@@ -78,11 +91,27 @@ export class Flag {
         this.DY2 = 3.02 / ratio;
     }
 
+    getObjectPosition(): THREE.Vector3 {
+        return this.flagMesh.position;
+    }
+
+    onLookEnd(): void {
+        Utils.appendSectionHTML(this.flagProjectSectionId, Flag.projSectionId);
+        let projSection = document.getElementById(Flag.projSectionId);
+        if (projSection != null) {
+            projSection.style.visibility = "visible";
+        }
+    }
+
     glowEffect(start: boolean): void {
         if (start) {
+            Utils.setEmissiveMesh(this.flagStickMesh, this.flagStickColor);
+            Utils.setEmissiveMesh(this.flagMesh, "white");
             Scene.addEntity(this.flagGlowLight);
             Scene.addEntity(this.flagGlowMesh);
         } else {
+            Utils.removeEmissiveMesh(this.flagStickMesh);
+            Utils.removeEmissiveMesh(this.flagMesh);
             Scene.removeEntity(this.flagGlowLight);
             Scene.removeEntity(this.flagGlowMesh);
         }
@@ -98,6 +127,13 @@ export class Flag {
         this.flagStickMesh.position.copy(flagStickPosition);
         this.flagGlowLight.position.copy(flagPosition);
         this.flagGlowMesh.position.copy(flagPosition);
+    }
+
+    onClick(): void {
+        let flagPosition = this.flagMesh.position;
+        let finalPosition = flagPosition.clone();
+        finalPosition.z += 30;
+        Scene.addCameraLerp(finalPosition, this);
     }
 
     updateFrame(): void {

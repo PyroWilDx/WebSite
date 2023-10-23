@@ -19,7 +19,7 @@ export class Player {
             this.playerModel = gltf.scene;
             this.playerModel.position.copy(position);
             this.playerModel.scale.set(scale, scale, scale);
-            Utils.setEmissiveIntensityToGLTF(this.playerModel, 200);
+            Utils.setEmissiveGLTF(this.playerModel, 200);
             Scene.addEntity(this.playerModel);
         });
 
@@ -51,6 +51,11 @@ export class Player {
             // this.playerLight.position.z += z;
             // this.playerLight.target.position.z += z;
         }
+    }
+
+    getPosition(): THREE.Vector3 {
+        if (this.playerModel != null) return this.playerModel.position;
+        return new THREE.Vector3(0, 0, 0);
     }
 
     updateFrame(): void {

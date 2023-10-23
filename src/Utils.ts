@@ -35,6 +35,13 @@ export class Utils {
         return randomVec;
     }
 
+    static areVector3AlmostEqual(v1: THREE.Vector3, v2: THREE.Vector3,
+            epsilon: number = 0.1): boolean {
+        return (Math.abs(v1.x - v2.x) < epsilon &&
+                Math.abs(v1.y - v2.y) < epsilon &&
+                Math.abs(v1.z - v2.z) < epsilon);
+    }
+
     static updateMousePosition(event: MouseEvent): void {
         Utils.lastMousePosition.copy(Utils.mousePosition);
         Utils.mousePosition.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -54,9 +61,18 @@ export class Utils {
         return this.keyMap[key];
     }
 
-    static setEmissiveIntensityToGLTF(gltfModel: THREE.Group<THREE.Object3DEventMap>,
+    static setEmissiveMesh(mesh: THREE.Mesh,
+        emissiveColor: THREE.ColorRepresentation, intensityValue: number = 0) {
+        mesh.material.emissive.set(emissiveColor);
+    }
+
+    static removeEmissiveMesh(mesh: THREE.Mesh) {
+        mesh.material.emissive.set("black");
+    }
+
+    static setEmissiveGLTF(gltfModel: THREE.Group<THREE.Object3DEventMap>,
             intensityValue: number): void {
-        gltfModel.traverse((object: THREE.Object3D) => {
+        gltfModel.traverse((object: THREE.Object3D<THREE.Object3DEventMap>) => {
             if (object.isMesh) {
                 let material = object.material;
                 if (material.emissive) {
@@ -64,6 +80,18 @@ export class Utils {
                 }
             }
         })
+    }
+
+    static appendSectionHTML(srcId: string, dstId: string) {
+        let srcContent = document.getElementById(srcId);
+        if (srcContent != null) {
+            let dstContent = document.getElementById(dstId);
+            if (dstContent) {
+                while (srcContent.firstChild) {
+                    dstContent.appendChild(srcContent.firstChild);
+                }
+            }
+        }
     }
 
 }

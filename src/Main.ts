@@ -13,25 +13,24 @@ Scene.initScene();
 
 const controls = new OrbitControls(Scene.camera, Scene.renderer.domElement);
 
-
 // World Building
 let galaxy: Galaxy = new Galaxy(Utils.worldRadius);
-// galaxy.addBackgroundImg("res/imgs/background.png");
+// galaxy.addBackgroundImg("res/imgs/Background.png");
 galaxy.addStars(600, "res/3d/MarioStar/scene.gltf");
 
-let sun = new Planet("res/imgs/sun.jpg", 40,
+let sun = new Planet("res/imgs/Sun.jpg", 40,
 	new THREE.Vector3(0, 0, -200), 10, "red");
 sun.addRing(2, 10, null, 0x00BFFF);
 sun.addRing(2, 10, null, 0xDC143C);
-let flag: Flag = new Flag(60, 36, "res/imgs/flag.png",
-			1, 80, 0xFFFFFF);
+let flag: Flag = new Flag(60, 36, "res/imgs/SkyDev0.png",
+			1, 80, 0xFFFFFF, "ProjectTest");
 sun.setFlag(flag);
 galaxy.addPlanet(sun);
 
-galaxy.addPlanet(new Planet("res/imgs/sun.jpg", 20,
+galaxy.addPlanet(new Planet("res/imgs/Sun.jpg", 20,
 	new THREE.Vector3(-300, 0, -400), 10, "red"));
 
-galaxy.addPlanet(new Planet("res/imgs/sun.jpg", 1,
+galaxy.addPlanet(new Planet("res/imgs/Sun.jpg", 1,
 	new THREE.Vector3(0, 0, 0)));
 
 let player = new Player(new THREE.Vector3(0, 0, 0),
@@ -40,11 +39,19 @@ galaxy.setRocket(player);
 
 // Event Listeners
 window.addEventListener('mousedown', (event) => {
-	if (event.button === 0) Utils.isMouseDown = true;
+	if (event.button === 0) {
+		Utils.isMouseDown = true;
+
+		galaxy.updateCurrentHoldFlag();
+	}
 });
   
 window.addEventListener('mouseup', (event) => {
-	if (event.button === 0 ) Utils.isMouseDown = false;
+	if (event.button === 0 ) {
+		galaxy.checkFlagOnMouseUp();
+
+		Utils.isMouseDown = false;
+	}
 });
 
 window.addEventListener('mousemove', (event) => {
@@ -84,9 +91,9 @@ function animate() {
 
 	galaxy.updateFrame();
 
-	controls.update();
+	// controls.update();
 
-	Scene.renderScene();
+	Scene.updateFrame();
 }
 
 animate();

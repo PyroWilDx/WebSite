@@ -11,13 +11,16 @@ export class Galaxy {
     private allStars: Star[];
     private allPlanets: Planet[];
     private player: Player | null;
-    private currFlag: Flag | null = null;
+    private currHoldFlag: Flag | null;
+    private currFlag: Flag | null;
 
     constructor(radius: number, ) {
         this.radius = radius;
         this.allStars = [];
         this.allPlanets = [];
         this.player = null;
+        this.currHoldFlag = null;
+        this.currFlag = null;
     }
 
     addBackgroundImg(backgroundPath: string) {
@@ -34,7 +37,7 @@ export class Galaxy {
     addStars(nStars: number, modelPath: string): void {
         Utils.gltfLoader.load(modelPath, ( gltf ) => {
             let baseStarModel = gltf.scene;
-            Utils.setEmissiveIntensityToGLTF(baseStarModel, 50);
+            Utils.setEmissiveGLTF(baseStarModel, 50);
             for (let i = 0; i < nStars; i++) {
                 let currStar: Star = new Star(baseStarModel.clone(),
                     THREE.MathUtils.randFloat(0.004, 0.02),
@@ -75,6 +78,11 @@ export class Galaxy {
         return null;
     }
 
+    updateCurrentHoldFlag(): void {
+        this.rayCastFlags();
+        this.currHoldFlag = this.currFlag;
+    }
+
     rayCastFlags(): void {
         Utils.rayCaster.setFromCamera(Utils.mousePosition, Scene.camera);
         const intersected = Utils.rayCaster.intersectObjects(this.getAllFlagsMesh());
@@ -92,6 +100,13 @@ export class Galaxy {
         if (this.currFlag != null) {
             this.currFlag.glowEffect(false);
             this.currFlag = null;
+        }
+    }
+
+    checkFlagOnMouseUp(): void {
+        if (this.currHoldFlag != null) {
+            this.rayCastFlags();
+            if (this.currHoldFlag == this.currFlag) this.currHoldFlag.onClick();
         }
     }
 

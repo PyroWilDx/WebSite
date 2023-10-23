@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { CameraLerp } from './CameraLerp';
+import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { Utils } from './Utils';
 
 export class Scene {
@@ -11,6 +13,8 @@ export class Scene {
     public static globalLight: THREE.AmbientLight;
 
     public static effectComposer: EffectComposer;
+
+    public static cameraLerp: CameraLerp | null;
 
     static initScene(): void {
         Scene.scene = new THREE.Scene();
@@ -28,7 +32,7 @@ export class Scene {
         Scene.renderer.setSize(window.innerWidth, window.innerHeight);
         Scene.renderer.render(Scene.scene, Scene.camera);
 
-        Scene.globalLight = new THREE.AmbientLight(0xFFFFFF, 1);
+        Scene.globalLight = new THREE.AmbientLight(0xFFFFFF, 0.8);
         Scene.addEntity(Scene.globalLight);
 
         let renderPass = new RenderPass(Scene.scene, Scene.camera);
@@ -42,6 +46,8 @@ export class Scene {
             1
         );
         Scene.composerAddPass(bloomPass);
+
+        this.cameraLerp = null;
     }
 
     static addEntity(entity: THREE.Object3D): void {
@@ -76,6 +82,22 @@ export class Scene {
         finalRotation.z += cameraRotation.z;
 
         Scene.setCameraRotation(finalRotation);
+    }
+
+    static addCameraLerp(finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface): void {
+        this.cameraLerp = new CameraLerp(this.camera,
+            finalPosition, lookObject);
+    }
+
+    static removeCameraLerp(): void {
+        this.cameraLerp = null;
+    }
+
+    static updateFrame(): void {
+        if (this.cameraLerp != null) {
+            this.cameraLerp.updateFrame();
+        }
+        Scene.renderScene();
     }
 
 }
