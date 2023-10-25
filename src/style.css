@@ -11,6 +11,8 @@
     font-family: brandon-grotesque, sans-serif;
     font-weight: 400;
     font-style: normal;
+
+    text-align: center;
 }
 
 main {
@@ -29,6 +31,11 @@ section {
     margin-bottom: var(--spacing);
 }
 
+h2 {
+    margin-top: 6px;
+    margin-bottom: 16px;
+}
+
 img {
     width: 100%;
     max-width: 100%;
@@ -45,8 +52,20 @@ img {
     border-radius: 10px;
     cursor: pointer;
     text-align: center;
+    margin-bottom: 20px;
+    margin-left: 6px;
+    margin-right: 6px;
 }
   
 .button-link:hover {
     background-color: #0056a9;
+}
+
+.img-project {
+    text-align: center;
+}
+
+.img-project img {
+    width: 80%;
+    margin: 8 auto;
 }

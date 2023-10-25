@@ -89,13 +89,20 @@ export class Scene {
         Scene.setCameraRotation(finalRotation);
     }
 
-    static addCameraLerp(finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface): void {
+    static setCameraLerp(finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface): void {
         this.cameraLerp = new CameraLerp(this.camera,
             finalPosition, lookObject);
     }
 
     static removeCameraLerp(): void {
         this.cameraLerp = null;
+    }
+
+    static getCameraLerpObject(): ObjectLookedInterface | null {
+        if (this.cameraLerp != null) {
+            return this.cameraLerp.getLookObject();
+        }
+        return null;
     }
 
     static setProjectDisplayer(displayer: ProjectDisplayerInterface,
@@ -113,16 +120,28 @@ export class Scene {
         return (Scene.projectDisplayer != null);
     }
 
+    static getProjectDisplayer(): ProjectDisplayerInterface | null {
+        if (Scene.projectDisplayer != null) {
+            return Scene.projectDisplayer.displayer;
+        }
+        return null;
+    }
+
     static removeProjectDisplayer(): void {
-        if (this.projectDisplayer != null) {
+        if (this.isDisplayingProject()) {
             this.projectDisplayer.displayed.style.display = "none";
+            let displayer = this.projectDisplayer.displayer;
             this.projectDisplayer = null;
+            displayer.onProjectHideDisplay();
         }
     }
 
     static updateFrame(): void {
         if (this.cameraLerp != null) {
             this.cameraLerp.updateFrame();
+        }
+        if (this.isDisplayingProject()) {
+            this.projectDisplayer.displayer.updateFrameDisplayer();
         }
         Scene.renderScene();
     }

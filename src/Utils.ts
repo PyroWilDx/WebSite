@@ -94,4 +94,12 @@ export class Utils {
         }
     }
 
+    static getElementRect(elId: string): DOMRect {
+        const el = document.getElementById(elId);
+        if (el != null) {
+            return el.getBoundingClientRect();
+        }
+        return new DOMRect(0, 0, 0, 0);
+    }
+
 }

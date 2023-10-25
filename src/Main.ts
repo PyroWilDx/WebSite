@@ -86,8 +86,8 @@ window.addEventListener("keydown", function(event) {
 	let key = event.key;
 	Utils.updateKeyMap(key, true);
 
-	if (key == "Escape" && Scene.isDisplayingProject()) {
-		Scene.projectDisplayer.displayer.onProjectHideDisplay();
+	if (key == "Escape") {
+		Scene.removeProjectDisplayer();
 	}
 });
 

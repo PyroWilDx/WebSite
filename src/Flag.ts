@@ -3,6 +3,7 @@ import flagGlowFragmentShader from './../res/shaders/flagGlowFragment.glsl';
 import flagGlowVertexShader from './../res/shaders/flagGlowVertex.glsl';
 import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { ProjectDisplayerInterface } from './ProjectDisplayerInterface';
+import { RotatingObject } from './RotatingObject';
 import { Scene } from './Scene';
 import { Utils } from './Utils';
 
@@ -22,7 +23,7 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
     private flagGlowMesh: THREE.Mesh;
 
     private flagProjectSectionId: string;
-    private toolIconCubeMeshes: THREE.Mesh[];
+    private toolIconCubeMeshes: RotatingObject[];
 
     private halfFlagW: number;
     private AX1: number;
@@ -82,14 +83,15 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         this.toolIconCubeMeshes = [];
         for (const imgPath of toolIconCubeImgs) {
             let cubeTexture = Utils.textureLoader.load(imgPath);
-            let cubeMesh = new THREE.Mesh(
+            let cubeMesh = new RotatingObject(
                 new THREE.BoxGeometry(Flag.cubeSize, Flag.cubeSize, Flag.cubeSize),
                 new THREE.MeshStandardMaterial({
                     map: cubeTexture,
                     side: THREE.FrontSide,
                     emissiveIntensity: 2,
                     emissiveMap: cubeTexture
-                })
+                }),
+                Utils.getRandomVector3Spread(0.004)
             );
             this.toolIconCubeMeshes.push(cubeMesh);
         }
@@ -111,13 +113,18 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         return this.flagMesh.position;
     }
 
+    getObjectWorldQuaternion(): THREE.Quaternion {
+        let quaternion = new THREE.Quaternion();
+        this.flagMesh.getWorldQuaternion(quaternion);
+        return quaternion;
+    }
+
     onLookProgress(): void {
-        this.glowEffect(true);
+
     }
 
     onLookEnd(): void {
         this.displayProject();
-        this.glowEffect(false);
     }
 
     displayProject(): void {
@@ -134,15 +141,20 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         }
     }
 
+    updateFrameDisplayer(): void {
+        for (const cubeMesh of this.toolIconCubeMeshes) {
+            cubeMesh.rotate();
+        }
+    }
+
     onProjectHideDisplay(): void {
+        this.glowEffect(false);
         // this.flagMesh.visible = true;
         // this.flagStickMesh.visible = true;
 
         for (const cubeMesh of this.toolIconCubeMeshes) {
             Scene.removeEntity(cubeMesh);
         }
-
-        Scene.removeProjectDisplayer();
     }
 
     glowEffect(start: boolean): void {
@@ -152,10 +164,13 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
             Scene.addEntity(this.flagGlowLight);
             Scene.addEntity(this.flagGlowMesh);
         } else {
-            Utils.removeEmissiveMesh(this.flagStickMesh);
-            Utils.removeEmissiveMesh(this.flagMesh);
-            Scene.removeEntity(this.flagGlowLight);
-            Scene.removeEntity(this.flagGlowMesh);
+            if (Scene.getCameraLerpObject() != this &&
+                    Scene.getProjectDisplayer() != this) {
+                Utils.removeEmissiveMesh(this.flagStickMesh);
+                Utils.removeEmissiveMesh(this.flagMesh);
+                Scene.removeEntity(this.flagGlowLight);
+                Scene.removeEntity(this.flagGlowMesh);
+            }
         }
     }
 
@@ -180,11 +195,14 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
     }
 
     onClick(): void {
-        if (!Scene.isDisplayingProject()) {
-            let flagPosition = this.flagMesh.position;
-            let finalPosition = flagPosition.clone();
-            finalPosition.z += 30;
-            Scene.addCameraLerp(finalPosition, this);
+        if (Scene.getProjectDisplayer() != this) {
+            Scene.removeProjectDisplayer();
+
+            let finalPosition = this.flagMesh.position.clone();
+            finalPosition.z += 60;
+            Scene.setCameraLerp(finalPosition, this);
+
+            this.glowEffect(true);
         }
     }
 

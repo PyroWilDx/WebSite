@@ -1,5 +1,6 @@
 export interface ProjectDisplayerInterface {
     displayProject(): void;
+    updateFrameDisplayer(): void;
     onProjectHideDisplay(): void;
 }
 

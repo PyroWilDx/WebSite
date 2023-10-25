@@ -1,35 +1,37 @@
 import * as THREE from 'three';
 import { Flag } from './Flag.ts';
+import { RotatingObject } from './RotatingObject.ts';
 import { Scene } from './Scene.ts';
 import { Utils } from './Utils.ts';
 
-export class Planet {
+export class Planet extends RotatingObject {
 
     private radius: number;
-    private planetMesh: THREE.Mesh;
-    private ringMeshes: THREE.Mesh[];
+    private ringMeshes: RotatingObject[];
     private flag: Flag | null;
 
     constructor(imgPath: string, radius: number,
             position: THREE.Vector3, emissiveIntensity: number = 0,
             emissiveColor: THREE.ColorRepresentation = 0x0) {
-        this.radius = radius;
 
         let nVerticles = Math.max(64, radius / 4);
         nVerticles = Math.min(160, nVerticles);
         let planetTexture = Utils.textureLoader.load(imgPath);
-        this.planetMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(radius, nVerticles, nVerticles),
+
+        super(new THREE.SphereGeometry(radius, nVerticles, nVerticles),
             new THREE.MeshStandardMaterial({
                 map: planetTexture,
                 side: THREE.FrontSide,
                 emissiveIntensity: emissiveIntensity,
                 emissive: emissiveColor,
                 emissiveMap: planetTexture
-            })
+            }),
+            Utils.getRandomVector3Spread(0.0026)
         );
-        this.planetMesh.position.copy(position);
-        Scene.addEntity(this.planetMesh);
+        this.position.copy(position);
+        Scene.addEntity(this);
+
+        this.radius = radius;
 
         this.ringMeshes = [];
         this.flag = null;
@@ -41,45 +43,41 @@ export class Planet {
 
         let nVerticles = Math.max(64, (tStart + length) / 4);
         nVerticles = Math.min(160, nVerticles);
-        let ringMesh: THREE.Mesh | null = null;
+        let rSpeed = Utils.getRandomVector3Spread(0.004);
+        let ringMesh: RotatingObject | null = null;
         if (colorV != null) {
-            ringMesh = new THREE.Mesh(
+            ringMesh = new RotatingObject(
                 new THREE.RingGeometry(tStart, tStart + length, nVerticles),
                 new THREE.MeshStandardMaterial({
                     color: colorV,
                     side: THREE.DoubleSide
-                })
+                }),
+                rSpeed
             ); 
         }
         if (texturePath != null) {
-            ringMesh = new THREE.Mesh(
+            ringMesh = new RotatingObject(
                 new THREE.RingGeometry(tStart, tStart + length, nVerticles),
                 new THREE.MeshStandardMaterial({
                     map: Utils.textureLoader.load(texturePath),
                     side: THREE.DoubleSide
-                })
+                }),
+                rSpeed
             );
         }
 
         if (ringMesh != null) {
-            this.planetMesh.getWorldPosition(ringMesh.position);
-            ringMesh.rotation.set(THREE.MathUtils.randFloat(0, 2 * Math.PI),
-                THREE.MathUtils.randFloat(0, 2 * Math.PI),
-                THREE.MathUtils.randFloat(0, 2 * Math.PI));
+            this.getWorldPosition(ringMesh.position);
             Scene.addEntity(ringMesh);
             this.ringMeshes.push(ringMesh);
         }
     }
     
     updateFrame(): void {
-        this.planetMesh.rotation.x += 0.001;
-        this.planetMesh.rotation.y += 0.0016;
-        this.planetMesh.rotation.z += 0.001;
+        this.rotate();
     
         for (const currRingMesh of this.ringMeshes) {
-            currRingMesh.rotation.x += THREE.MathUtils.randFloat(0.002, 0.012);
-            currRingMesh.rotation.y += THREE.MathUtils.randFloat(0.002, 0.012);
-            currRingMesh.rotation.z += THREE.MathUtils.randFloat(0.002, 0.012);
+            currRingMesh.rotate();
         }
 
         if (this.flag != null) {
@@ -89,7 +87,7 @@ export class Planet {
 
     setFlag(flag: Flag): void {
         this.flag = flag;
-        let flagPosition = this.planetMesh.position.clone();
+        let flagPosition = this.position.clone();
         flagPosition.y += this.radius - 10;
         this.flag.setPositionFromDown(flagPosition);
     }
