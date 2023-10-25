@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import flagGlowFragmentShader from './../res/shaders/flagGlowFragment.glsl';
 import flagGlowVertexShader from './../res/shaders/flagGlowVertex.glsl';
-import { GetLookedInterface } from './ObjectLookedInterface';
+import { ObjectLookedInterface } from './ObjectLookedInterface';
+import { ProjectDisplayerInterface } from './ProjectDisplayerInterface';
 import { Scene } from './Scene';
 import { Utils } from './Utils';
 
-export class Flag implements GetLookedInterface {
-    public static readonly projSectionId: string = "ProjSection";
-
+export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
+    private static readonly cubeSize: number = 20;
+    
     private flagW: number;
     private flagH: number;
     private flagMesh: THREE.Mesh;
@@ -21,6 +22,7 @@ export class Flag implements GetLookedInterface {
     private flagGlowMesh: THREE.Mesh;
 
     private flagProjectSectionId: string;
+    private toolIconCubeMeshes: THREE.Mesh[];
 
     private halfFlagW: number;
     private AX1: number;
@@ -34,7 +36,7 @@ export class Flag implements GetLookedInterface {
 
     constructor(flagW: number, flagH: number, flagImgPath: string,
         flagStickRadius: number, flagStickH: number, flagStickColor: number,
-        projSectionId: string) {
+        projSectionId: string, ...toolIconCubeImgs: string[]) {
         this.flagW = flagW;
         this.flagH = flagH;
         
@@ -44,8 +46,8 @@ export class Flag implements GetLookedInterface {
             new THREE.MeshStandardMaterial({
                 map: flagTexture,
                 side: THREE.DoubleSide,
-                emissiveMap: flagTexture,
-                emissiveIntensity: 0.46
+                emissiveIntensity: 0.46,
+                emissiveMap: flagTexture
             })
         );
         Scene.scene.add(this.flagMesh);
@@ -77,6 +79,20 @@ export class Flag implements GetLookedInterface {
         this.flagGlowMesh.scale.set(glowScale, glowScale, glowScale);
 
         this.flagProjectSectionId = projSectionId;
+        this.toolIconCubeMeshes = [];
+        for (const imgPath of toolIconCubeImgs) {
+            let cubeTexture = Utils.textureLoader.load(imgPath);
+            let cubeMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(Flag.cubeSize, Flag.cubeSize, Flag.cubeSize),
+                new THREE.MeshStandardMaterial({
+                    map: cubeTexture,
+                    side: THREE.FrontSide,
+                    emissiveIntensity: 2,
+                    emissiveMap: cubeTexture
+                })
+            );
+            this.toolIconCubeMeshes.push(cubeMesh);
+        }
 
         this.halfFlagW = this.flagW / 2;
 
@@ -95,12 +111,38 @@ export class Flag implements GetLookedInterface {
         return this.flagMesh.position;
     }
 
+    onLookProgress(): void {
+        this.glowEffect(true);
+    }
+
     onLookEnd(): void {
-        Utils.appendSectionHTML(this.flagProjectSectionId, Flag.projSectionId);
-        let projSection = document.getElementById(Flag.projSectionId);
-        if (projSection != null) {
-            projSection.style.visibility = "visible";
+        this.displayProject();
+        this.glowEffect(false);
+    }
+
+    displayProject(): void {
+        let projectSection = document.getElementById(this.flagProjectSectionId);
+        if (projectSection != null) {
+            Scene.setProjectDisplayer(this, projectSection);
+
+            for (const cubeMesh of this.toolIconCubeMeshes) {
+                Scene.addEntity(cubeMesh);
+            }
+
+            // this.flagMesh.visible = false;
+            // this.flagStickMesh.visible = false;
         }
+    }
+
+    onProjectHideDisplay(): void {
+        // this.flagMesh.visible = true;
+        // this.flagStickMesh.visible = true;
+
+        for (const cubeMesh of this.toolIconCubeMeshes) {
+            Scene.removeEntity(cubeMesh);
+        }
+
+        Scene.removeProjectDisplayer();
     }
 
     glowEffect(start: boolean): void {
@@ -127,13 +169,23 @@ export class Flag implements GetLookedInterface {
         this.flagStickMesh.position.copy(flagStickPosition);
         this.flagGlowLight.position.copy(flagPosition);
         this.flagGlowMesh.position.copy(flagPosition);
+
+        let currCubePosition = flagPosition;
+        currCubePosition.x += 48;
+        currCubePosition.y += -10;
+        for (const cubeMesh of this.toolIconCubeMeshes) {
+            cubeMesh.position.copy(currCubePosition);
+            currCubePosition.y += Flag.cubeSize + 6;
+        }
     }
 
     onClick(): void {
-        let flagPosition = this.flagMesh.position;
-        let finalPosition = flagPosition.clone();
-        finalPosition.z += 30;
-        Scene.addCameraLerp(finalPosition, this);
+        if (!Scene.isDisplayingProject()) {
+            let flagPosition = this.flagMesh.position;
+            let finalPosition = flagPosition.clone();
+            finalPosition.z += 30;
+            Scene.addCameraLerp(finalPosition, this);
+        }
     }
 
     updateFrame(): void {

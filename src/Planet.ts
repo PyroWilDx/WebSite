@@ -17,13 +17,15 @@ export class Planet {
 
         let nVerticles = Math.max(64, radius / 4);
         nVerticles = Math.min(160, nVerticles);
+        let planetTexture = Utils.textureLoader.load(imgPath);
         this.planetMesh = new THREE.Mesh(
             new THREE.SphereGeometry(radius, nVerticles, nVerticles),
             new THREE.MeshStandardMaterial({
-                map: Utils.textureLoader.load(imgPath),
+                map: planetTexture,
                 side: THREE.FrontSide,
                 emissiveIntensity: emissiveIntensity,
                 emissive: emissiveColor,
+                emissiveMap: planetTexture
             })
         );
         this.planetMesh.position.copy(position);

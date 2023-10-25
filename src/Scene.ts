@@ -4,6 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { CameraLerp } from './CameraLerp';
 import { ObjectLookedInterface } from './ObjectLookedInterface';
+import { ProjectDisplayer, ProjectDisplayerInterface } from './ProjectDisplayerInterface';
 import { Utils } from './Utils';
 
 export class Scene {
@@ -15,6 +16,8 @@ export class Scene {
     public static effectComposer: EffectComposer;
 
     public static cameraLerp: CameraLerp | null;
+
+    public static projectDisplayer: ProjectDisplayer | null;
 
     static initScene(): void {
         Scene.scene = new THREE.Scene();
@@ -48,6 +51,8 @@ export class Scene {
         Scene.composerAddPass(bloomPass);
 
         this.cameraLerp = null;
+
+        this.projectDisplayer = null;
     }
 
     static addEntity(entity: THREE.Object3D): void {
@@ -91,6 +96,28 @@ export class Scene {
 
     static removeCameraLerp(): void {
         this.cameraLerp = null;
+    }
+
+    static setProjectDisplayer(displayer: ProjectDisplayerInterface,
+            displayed: HTMLElement): void {
+        displayed.style.display = "";
+
+        if (Scene.isDisplayingProject()) {
+            Scene.removeProjectDisplayer();
+        }
+        
+        this.projectDisplayer = {displayer, displayed};
+    }
+
+    static isDisplayingProject(): boolean {
+        return (Scene.projectDisplayer != null);
+    }
+
+    static removeProjectDisplayer(): void {
+        if (this.projectDisplayer != null) {
+            this.projectDisplayer.displayed.style.display = "none";
+            this.projectDisplayer = null;
+        }
     }
 
     static updateFrame(): void {

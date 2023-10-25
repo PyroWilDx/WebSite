@@ -4,7 +4,7 @@ import { Scene } from './Scene';
 import { Utils } from './Utils';
 
 export class CameraLerp {
-    public static readonly lerpSpeed: number = 0.04;
+    public static readonly lerpSpeed: number = 0.026;
 
     private camera: THREE.PerspectiveCamera;
     private finalPosition: THREE.Vector3;
@@ -20,6 +20,8 @@ export class CameraLerp {
     updateFrame() {
         this.camera.position.lerp(this.finalPosition, CameraLerp.lerpSpeed);
         this.camera.lookAt(this.lookObject.getObjectPosition());
+
+        this.lookObject.onLookProgress();
 
         if (Utils.areVector3AlmostEqual(this.camera.position, 
                 this.finalPosition, 2)) {

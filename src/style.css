@@ -14,20 +14,18 @@
 }
 
 main {
-    width: 100vw;
     color: white;
     position: absolute;
-    width: 50%;
+    width: 60%;
     margin: 0px auto;
-    padding: 120px 0px;
+    padding: 0px 0px;
 }
   
 section {
-    width: 4 / 16;
     padding: 1rem;
     background: var(--dark-bg);
-    font-size: 1.25rem;
-    line-height: 1.5;
+    font-size: 1.26rem;
+    line-height: 1.4;
     margin-bottom: var(--spacing);
 }
 
@@ -41,10 +39,10 @@ img {
     display: inline-block;
     padding: 10px 20px;
     background-color: #0074d9;
-    color: #fff;
+    color: #ffffff;
     text-decoration: none;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
     cursor: pointer;
     text-align: center;
 }
