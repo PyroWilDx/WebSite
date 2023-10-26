@@ -3,11 +3,15 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { CameraLerp } from './CameraLerp';
+import { Galaxy } from './Galaxy';
 import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { ProjectDisplayer, ProjectDisplayerInterface } from './ProjectDisplayerInterface';
-import { Utils } from './Utils';
 
 export class Scene {
+    public static readonly worldRadius: number = 2000;
+
+    public static galaxy: Galaxy;
+
     public static scene: THREE.Scene;
     public static camera: THREE.PerspectiveCamera;
     public static renderer: THREE.WebGLRenderer;
@@ -23,7 +27,7 @@ export class Scene {
         Scene.scene = new THREE.Scene();
 
         Scene.camera  = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight,
-            0.1, Utils.worldRadius * 2);
+            0.1, Scene.worldRadius * 2);
         Scene.camera.position.setZ(30);
 
         Scene.renderer = new THREE.WebGLRenderer({
@@ -39,8 +43,8 @@ export class Scene {
         Scene.addEntity(Scene.globalLight);
 
         let renderPass = new RenderPass(Scene.scene, Scene.camera);
-        this.effectComposer = new EffectComposer(this.renderer);
-        this.effectComposer.addPass(renderPass);
+        Scene.effectComposer = new EffectComposer(this.renderer);
+        Scene.effectComposer.addPass(renderPass);
 
         const bloomPass = new UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -50,33 +54,43 @@ export class Scene {
         );
         Scene.composerAddPass(bloomPass);
 
-        this.cameraLerp = null;
+        Scene.cameraLerp = null;
 
-        this.projectDisplayer = null;
+        Scene.projectDisplayer = null;
+
+        Scene.galaxy = new Galaxy(Scene.worldRadius);;
     }
 
     static addEntity(entity: THREE.Object3D): void {
-        this.scene.add(entity);
+        Scene.scene.add(entity);
     };
 
     static removeEntity(entity: THREE.Object3D): void {
-        this.scene.remove(entity);
+        Scene.scene.remove(entity);
+    }
+
+    static getChildren(): THREE.Object3D[] {
+        return Scene.scene.children;
     }
 
     static composerAddPass(pass: UnrealBloomPass): void {
-        this.effectComposer.addPass(pass);
+        Scene.effectComposer.addPass(pass);
     }
 
     static renderScene(): void {
-        this.effectComposer.render();
+        Scene.effectComposer.render();
     }
 
     static setCameraPosition(position: THREE.Vector3): void {
-        this.camera.position.copy(position);
+        Scene.camera.position.copy(position);
+    }
+
+    static addCameraHeight(value: number) {
+        Scene.camera.position.y += value;
     }
 
     static setCameraRotation(rotation: THREE.Vector3): void {
-        this.camera.rotation.set(rotation.x, rotation.y, rotation.z);
+        Scene.camera.rotation.set(rotation.x, rotation.y, rotation.z);
     }
 
     static addCameraRotation(addRotation: THREE.Vector3): void {
@@ -89,18 +103,32 @@ export class Scene {
         Scene.setCameraRotation(finalRotation);
     }
 
+    static getCamera(): THREE.Camera {
+        return Scene.camera;
+    }
+
     static setCameraLerp(finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface): void {
-        this.cameraLerp = new CameraLerp(this.camera,
+        let lastLookObject = this.getCameraLerpObject();
+        
+        Scene.cameraLerp = new CameraLerp(this.camera,
             finalPosition, lookObject);
+
+        if (lastLookObject != null) {
+            lastLookObject.onLookInterruption();
+        }
     }
 
     static removeCameraLerp(): void {
-        this.cameraLerp = null;
+        Scene.cameraLerp = null;
+    }
+
+    static isCameraLerping(): boolean {
+        return (Scene.cameraLerp != null);
     }
 
     static getCameraLerpObject(): ObjectLookedInterface | null {
-        if (this.cameraLerp != null) {
-            return this.cameraLerp.getLookObject();
+        if (Scene.cameraLerp != null) {
+            return Scene.cameraLerp.getLookObject();
         }
         return null;
     }
@@ -108,12 +136,13 @@ export class Scene {
     static setProjectDisplayer(displayer: ProjectDisplayerInterface,
             displayed: HTMLElement): void {
         displayed.style.display = "";
+        displayed.style.opacity = "0";
 
         if (Scene.isDisplayingProject()) {
             Scene.removeProjectDisplayer();
         }
-        
-        this.projectDisplayer = {displayer, displayed};
+        let startTime = new Date().getTime();
+        Scene.projectDisplayer = {displayer, displayed, startTime};
     }
 
     static isDisplayingProject(): boolean {
@@ -128,20 +157,32 @@ export class Scene {
     }
 
     static removeProjectDisplayer(): void {
-        if (this.isDisplayingProject()) {
-            this.projectDisplayer.displayed.style.display = "none";
-            let displayer = this.projectDisplayer.displayer;
-            this.projectDisplayer = null;
+        if (Scene.isDisplayingProject()) {
+            Scene.projectDisplayer.displayed.style.display = "none";
+
+            let displayer = Scene.projectDisplayer.displayer;
+            
+            Scene.projectDisplayer = null;
+            
             displayer.onProjectHideDisplay();
+
+            let player = this.galaxy.getPlayer();
+            if (player != null) {
+                console.log("salut");
+                Scene.setCameraLerp(player.getObjectPosition(), player);
+                this.cameraLerp.setEpsilons(0.01, 0.00001);
+            }
         }
     }
 
     static updateFrame(): void {
-        if (this.cameraLerp != null) {
-            this.cameraLerp.updateFrame();
+        if (Scene.cameraLerp != null) {
+            Scene.cameraLerp.updateFrame();
         }
-        if (this.isDisplayingProject()) {
-            this.projectDisplayer.displayer.updateFrameDisplayer();
+        if (Scene.isDisplayingProject()) {
+            let elapsed = (new Date().getTime() - Scene.projectDisplayer.startTime)
+            Scene.projectDisplayer.displayed.style.opacity = (elapsed / 600).toString();
+            Scene.projectDisplayer.displayer.updateFrameDisplayer();
         }
         Scene.renderScene();
     }

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Flag } from './Flag.ts';
 import { Planet } from './Planet.ts';
 import { Player } from './Player.ts';
+import { RayCastableInterface } from './RayCastableInterface.ts';
 import { Scene } from './Scene.ts';
 import { Star } from './Star.ts';
 import { Utils } from './Utils.ts';
@@ -11,16 +12,22 @@ export class Galaxy {
     private allStars: Star[];
     private allPlanets: Planet[];
     private player: Player | null;
+
     private currHoldFlag: Flag | null;
     private currFlag: Flag | null;
 
-    constructor(radius: number, ) {
+    private rayCastedObjects: RayCastableInterface[];
+
+    constructor(radius: number) {
         this.radius = radius;
         this.allStars = [];
         this.allPlanets = [];
         this.player = null;
+
         this.currHoldFlag = null;
         this.currFlag = null;
+    
+        this.rayCastedObjects = [];
     }
 
     addBackgroundImg(backgroundPath: string) {
@@ -53,8 +60,12 @@ export class Galaxy {
         this.allPlanets.push(planet);
     }
 
-    setRocket(rocket: Player) {
-        this.player = rocket;
+    setPlayer(player: Player) {
+        this.player = player;
+    }
+
+    getPlayer(): Player | null {
+        return this.player;
     }
 
     getAllFlagsMesh(): THREE.Object3D[] {
@@ -85,7 +96,8 @@ export class Galaxy {
 
     rayCastFlags(): void {
         Utils.rayCaster.setFromCamera(Utils.mousePosition, Scene.camera);
-        const intersected = Utils.rayCaster.intersectObjects(this.getAllFlagsMesh());
+        const intersected = Utils.rayCaster.intersectObjects(
+            this.getAllFlagsMesh());
         if (intersected.length > 0) {
             const obj = intersected[0].object;
             if (obj instanceof THREE.Mesh) {
@@ -101,6 +113,30 @@ export class Galaxy {
             this.currFlag.glowEffect(false);
             this.currFlag = null;
         }
+    }
+
+    rayCastAll() {
+        Utils.rayCaster.setFromCamera(Utils.mousePosition, Scene.camera);
+        const intersected = Utils.rayCaster.intersectObjects(Scene.getChildren());
+        const currCastedObjects: RayCastableInterface[] = []
+        for (let i = 0; i < intersected.length; i++) {
+            const obj = intersected[0].object;
+            if (Utils.implementsRayCastable(obj)) {
+                const castedObj = (obj as unknown) as RayCastableInterface;
+                currCastedObjects.push(castedObj);
+                if (!this.rayCastedObjects.includes(castedObj)) {
+                    castedObj.onRayCast();
+                }
+            }
+        }
+
+        for (const lastCastedObj of this.rayCastedObjects) {
+            if (!currCastedObjects.includes(lastCastedObj)) {
+                lastCastedObj.onRayCastLeave();
+            }
+        }
+
+        this.rayCastedObjects = currCastedObjects;
     }
 
     checkFlagOnMouseUp(): void {

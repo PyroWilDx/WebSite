@@ -11,16 +11,14 @@
     font-family: brandon-grotesque, sans-serif;
     font-weight: 400;
     font-style: normal;
-
-    text-align: center;
 }
 
 main {
     color: white;
     position: absolute;
-    width: 60%;
-    margin: 0px auto;
-    padding: 0px 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
   
 section {
@@ -29,11 +27,13 @@ section {
     font-size: 1.26rem;
     line-height: 1.4;
     margin-bottom: var(--spacing);
+    width: 60%;
+    max-width: 100%;
 }
 
 h2 {
-    margin-top: 6px;
-    margin-bottom: 16px;
+    margin-top: 2px;
+    margin-bottom: 10px;
 }
 
 img {
@@ -42,9 +42,13 @@ img {
     height: auto;
 }
 
+p {
+    text-align: justify;
+}
+
 .button-link {
     display: inline-block;
-    padding: 10px 20px;
+    padding: 6px 20px;
     background-color: #0074d9;
     color: #ffffff;
     text-decoration: none;

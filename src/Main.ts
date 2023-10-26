@@ -1,5 +1,6 @@
+import TWEEN from '@tweenjs/tween.js';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Flag } from './Flag.ts';
 import { Galaxy } from './Galaxy.ts';
 import { Planet } from './Planet.ts';
@@ -11,10 +12,10 @@ import './style.css';
 // Inits
 Scene.initScene();
 
-const controls = new OrbitControls(Scene.camera, Scene.renderer.domElement);
+// const controls = new OrbitControls(Scene.camera, Scene.renderer.domElement);
 
 // World Building
-let galaxy: Galaxy = new Galaxy(Utils.worldRadius);
+let galaxy: Galaxy = Scene.galaxy;
 // galaxy.addBackgroundImg("res/imgs/Background.png");
 galaxy.addStars(600, "res/3d/MarioStar/scene.gltf");
 
@@ -42,7 +43,7 @@ galaxy.addPlanet(new Planet("res/imgs/Sun.jpg", 1,
 
 let player = new Player(new THREE.Vector3(0, 0, 0),
 	0.01, "res/3d/RobotUFO/scene.gltf");
-galaxy.setRocket(player);
+galaxy.setPlayer(player);
 
 // Event Listeners
 window.addEventListener('mousedown', (event) => {
@@ -67,6 +68,7 @@ window.addEventListener('mousemove', (event) => {
 
 window.addEventListener('mousemove', () => {
 	galaxy.rayCastFlags();
+	galaxy.rayCastAll();
 });
   
 window.addEventListener('mousemove', () => {
@@ -99,6 +101,8 @@ window.addEventListener("keyup", function(event) {
 // Main Loop
 function animate() {
 	requestAnimationFrame(animate);
+
+	TWEEN.update();
 
 	galaxy.updateFrame();
 

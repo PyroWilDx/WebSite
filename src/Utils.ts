@@ -6,8 +6,6 @@ export class Utils {
 
     private constructor() {}
 
-    public static readonly worldRadius: number = 2000;
-
     public static readonly clock: THREE.Clock = new THREE.Clock();
     public static readonly rayCaster: THREE.Raycaster = new THREE.Raycaster();
     
@@ -66,7 +64,7 @@ export class Utils {
         mesh.material.emissive.set(emissiveColor);
     }
 
-    static removeEmissiveMesh(mesh: THREE.Mesh) {
+    static removeEmissiveMesh(mesh: THREE.Mesh): void {
         mesh.material.emissive.set("black");
     }
 
@@ -82,7 +80,7 @@ export class Utils {
         })
     }
 
-    static appendSectionHTML(srcId: string, dstId: string) {
+    static appendSectionHTML(srcId: string, dstId: string): void {
         let srcContent = document.getElementById(srcId);
         if (srcContent != null) {
             let dstContent = document.getElementById(dstId);
@@ -100,6 +98,32 @@ export class Utils {
             return el.getBoundingClientRect();
         }
         return new DOMRect(0, 0, 0, 0);
+    }
+
+    static implementsRayCastable(obj: THREE.Object3D): boolean {
+        return (
+            'onRayCast' in obj && typeof obj.onRayCast === 'function' &&
+            'onRayCastLeave' in obj && typeof obj.onRayCastLeave === 'function'
+        );
+    }
+
+    static getPositionObjectBehind(frontObj: THREE.Object3D, 
+            distance: number): THREE.Vector3 {
+        let resPosition = new THREE.Vector3();
+        frontObj.getWorldPosition(resPosition);
+        
+        const offset = new THREE.Vector3(0, 0, -distance);
+        offset.applyQuaternion(frontObj.getWorldQuaternion(new THREE.Quaternion()));
+    
+        resPosition.add(offset);
+        return resPosition;
+    }
+
+    static positionObjectBehind(frontObj: THREE.Object3D, behindObj: THREE.Object3D,
+            distance: number) {
+        behindObj.rotation.copy(frontObj.rotation);
+
+        behindObj.position.copy(Utils.getPositionObjectBehind(frontObj, distance));
     }
 
 }

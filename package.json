@@ -15,6 +15,7 @@
     "vite-plugin-string": "^1.2.2"
   },
   "dependencies": {
+    "@tweenjs/tween.js": "^21.0.0",
     "has": "^1.0.4",
     "is-core-module": "^2.13.0",
     "path-parse": "^1.0.7",

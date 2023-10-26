@@ -1,8 +1,8 @@
-PUT THE HTML PAGE IN THE MIDDLE
-
 OBJECT APPEARING "POP" ANIMATION
 OBJECT ROTATION ANIM
 OBJECT SDL2 FADES AWAY ANIMATION
+
+html text finish all on same line
 
 uncontrollable camera when lerping to flag
 

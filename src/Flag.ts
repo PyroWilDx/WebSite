@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 import flagGlowFragmentShader from './../res/shaders/flagGlowFragment.glsl';
 import flagGlowVertexShader from './../res/shaders/flagGlowVertex.glsl';
+import { CameraLerp } from './CameraLerp';
+import { CustomAnimation } from './CustomAnimation';
 import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { ProjectDisplayerInterface } from './ProjectDisplayerInterface';
-import { RotatingObject } from './RotatingObject';
 import { Scene } from './Scene';
+import { ToolCube } from './ToolCube';
 import { Utils } from './Utils';
 
 export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
-    private static readonly cubeSize: number = 20;
-    
     private flagW: number;
     private flagH: number;
     private flagMesh: THREE.Mesh;
@@ -23,7 +23,7 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
     private flagGlowMesh: THREE.Mesh;
 
     private flagProjectSectionId: string;
-    private toolIconCubeMeshes: RotatingObject[];
+    private toolCubes: ToolCube[];
 
     private halfFlagW: number;
     private AX1: number;
@@ -80,20 +80,10 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         this.flagGlowMesh.scale.set(glowScale, glowScale, glowScale);
 
         this.flagProjectSectionId = projSectionId;
-        this.toolIconCubeMeshes = [];
+        this.toolCubes = [];
         for (const imgPath of toolIconCubeImgs) {
-            let cubeTexture = Utils.textureLoader.load(imgPath);
-            let cubeMesh = new RotatingObject(
-                new THREE.BoxGeometry(Flag.cubeSize, Flag.cubeSize, Flag.cubeSize),
-                new THREE.MeshStandardMaterial({
-                    map: cubeTexture,
-                    side: THREE.FrontSide,
-                    emissiveIntensity: 2,
-                    emissiveMap: cubeTexture
-                }),
-                Utils.getRandomVector3Spread(0.004)
-            );
-            this.toolIconCubeMeshes.push(cubeMesh);
+            let cubeMesh = new ToolCube(imgPath);
+            this.toolCubes.push(cubeMesh);
         }
 
         this.halfFlagW = this.flagW / 2;
@@ -113,13 +103,7 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         return this.flagMesh.position;
     }
 
-    getObjectWorldQuaternion(): THREE.Quaternion {
-        let quaternion = new THREE.Quaternion();
-        this.flagMesh.getWorldQuaternion(quaternion);
-        return quaternion;
-    }
-
-    onLookProgress(): void {
+    onLookProgress(cameraLerp: CameraLerp): void {
 
     }
 
@@ -127,13 +111,18 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         this.displayProject();
     }
 
+    onLookInterruption(): void {
+        this.glowEffect(false);
+    }
+
     displayProject(): void {
         let projectSection = document.getElementById(this.flagProjectSectionId);
         if (projectSection != null) {
             Scene.setProjectDisplayer(this, projectSection);
 
-            for (const cubeMesh of this.toolIconCubeMeshes) {
+            for (const cubeMesh of this.toolCubes) {
                 Scene.addEntity(cubeMesh);
+                CustomAnimation.popAnimation(cubeMesh);
             }
 
             // this.flagMesh.visible = false;
@@ -142,7 +131,7 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
     }
 
     updateFrameDisplayer(): void {
-        for (const cubeMesh of this.toolIconCubeMeshes) {
+        for (const cubeMesh of this.toolCubes) {
             cubeMesh.rotate();
         }
     }
@@ -152,7 +141,7 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         // this.flagMesh.visible = true;
         // this.flagStickMesh.visible = true;
 
-        for (const cubeMesh of this.toolIconCubeMeshes) {
+        for (const cubeMesh of this.toolCubes) {
             Scene.removeEntity(cubeMesh);
         }
     }
@@ -186,11 +175,17 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         this.flagGlowMesh.position.copy(flagPosition);
 
         let currCubePosition = flagPosition;
-        currCubePosition.x += 48;
-        currCubePosition.y += -10;
-        for (const cubeMesh of this.toolIconCubeMeshes) {
-            cubeMesh.position.copy(currCubePosition);
-            currCubePosition.y += Flag.cubeSize + 6;
+        const addX = 156;
+        currCubePosition.x -= addX;
+        currCubePosition.y += 46;
+        currCubePosition.z -= 42;
+        for (let i = 0; i < this.toolCubes.length; i++) {
+            this.toolCubes[i].position.copy(currCubePosition);
+
+            if (i % 2) currCubePosition.x -= 2 * addX;
+            else currCubePosition.x += 2 * addX;
+
+            currCubePosition.y -= 20;
         }
     }
 

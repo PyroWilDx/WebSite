@@ -1,11 +1,11 @@
 import * as THREE from 'three';
+import { CameraLerp } from './CameraLerp';
+import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { Scene } from "./Scene";
 import { Utils } from "./Utils";
 
-export class Player {
-    public static readonly cameraXDist: number = 0;
-    public static readonly cameraYDist: number = 6;
-    public static readonly cameraZDist: number = 20;
+export class Player implements ObjectLookedInterface {
+    private static readonly addCameraHeight = 10;
 
     private playerModel: THREE.Group<THREE.Object3DEventMap> | null;
     private playerSpeed: THREE.Vector3;
@@ -13,7 +13,7 @@ export class Player {
 
     constructor(position: THREE.Vector3, scale: number, modelPath: string) {
         this.playerModel = null;
-        this.playerSpeed = new THREE.Vector3(1, 1, 1);
+        this.playerSpeed = new THREE.Vector3(1.0, 1.0, 1.0);
 
         Utils.gltfLoader.load(modelPath, ( gltf ) => {
             this.playerModel = gltf.scene;
@@ -27,6 +27,27 @@ export class Player {
             6000, 0, 1.6);
         this.playerLight.position.copy(position);
         Scene.addEntity(this.playerLight);
+    }
+
+    getObjectPosition(): THREE.Vector3 {
+        if (this.playerModel != null) return this.playerModel.position;
+        return new THREE.Vector3(0, 0, 0);
+    }
+
+    onLookProgress(cameraLerp: CameraLerp): void {
+        if (this.playerModel != null) {
+            let finalPosition = Utils.getPositionObjectBehind(this.playerModel, -20);
+            finalPosition.y += Player.addCameraHeight;
+            cameraLerp.setFinalPosition(finalPosition);
+        }
+    }
+
+    onLookEnd(): void {
+
+    }
+
+    onLookInterruption(): void {
+        
     }
 
     addPositionX(x: number): void {
@@ -53,11 +74,6 @@ export class Player {
         }
     }
 
-    getPosition(): THREE.Vector3 {
-        if (this.playerModel != null) return this.playerModel.position;
-        return new THREE.Vector3(0, 0, 0);
-    }
-
     updateFrame(): void {
         if (this.playerModel != null) {
             // this.playerModel.rotation.y += 0.01;
@@ -80,16 +96,14 @@ export class Player {
             if (Utils.isKeyPressed("Shift")) {
                 this.addPositionY(-this.playerSpeed.y);
             }
-
-            let playerPosition = this.playerModel.position;
             
-            this.playerLight.position.copy(playerPosition);
-
-            // Scene.setCameraPosition(
-            //     new THREE.Vector3(
-            //         playerPosition.x + Player.cameraXDist, 
-            //         playerPosition.y + Player.cameraYDist,
-            //         playerPosition.z + Player.cameraZDist));
+            if (!Scene.isDisplayingProject() && !Scene.isCameraLerping()) {
+                this.playerLight.position.copy(this.playerModel.position);
+                
+                Utils.positionObjectBehind(this.playerModel, Scene.getCamera(), -20);
+                Scene.addCameraHeight(Player.addCameraHeight);
+                Scene.camera.lookAt(this.playerModel.position);
+            }
         }
     }
 
