@@ -7,6 +7,7 @@ export class Utils {
     private constructor() {}
 
     public static readonly clock: THREE.Clock = new THREE.Clock();
+
     public static readonly rayCaster: THREE.Raycaster = new THREE.Raycaster();
     
     public static readonly textureLoader: THREE.TextureLoader = new THREE.TextureLoader();
@@ -40,6 +41,14 @@ export class Utils {
                 Math.abs(v1.z - v2.z) < epsilon);
     }
 
+    static getElapsedTime(): number {
+        return this.clock.getElapsedTime();
+    }
+
+    static getTime(): number {
+        return new Date().getTime();
+    }
+
     static updateMousePosition(event: MouseEvent): void {
         Utils.lastMousePosition.copy(Utils.mousePosition);
         Utils.mousePosition.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -60,18 +69,22 @@ export class Utils {
     }
 
     static setEmissiveMesh(mesh: THREE.Mesh,
-        emissiveColor: THREE.ColorRepresentation, intensityValue: number = 0) {
+            emissiveColor: THREE.ColorRepresentation) {
+        // @ts-ignore
         mesh.material.emissive.set(emissiveColor);
     }
 
     static removeEmissiveMesh(mesh: THREE.Mesh): void {
+        // @ts-ignore
         mesh.material.emissive.set("black");
     }
 
     static setEmissiveGLTF(gltfModel: THREE.Group<THREE.Object3DEventMap>,
             intensityValue: number): void {
         gltfModel.traverse((object: THREE.Object3D<THREE.Object3DEventMap>) => {
+            // @ts-ignore
             if (object.isMesh) {
+                // @ts-ignore
                 let material = object.material;
                 if (material.emissive) {
                     material.emissiveIntensity = intensityValue;
@@ -108,7 +121,10 @@ export class Utils {
     }
 
     static getPositionObjectBehind(frontObj: THREE.Object3D, 
-            distance: number): THREE.Vector3 {
+            distance: number, ignoreRotation: boolean = false): THREE.Vector3 {
+        let rot = frontObj.rotation.clone();
+        if (ignoreRotation) frontObj.rotation.set(0, 0, 0);
+
         let resPosition = new THREE.Vector3();
         frontObj.getWorldPosition(resPosition);
         
@@ -116,14 +132,17 @@ export class Utils {
         offset.applyQuaternion(frontObj.getWorldQuaternion(new THREE.Quaternion()));
     
         resPosition.add(offset);
+
+        if (ignoreRotation) frontObj.rotation.copy(rot);
+
         return resPosition;
     }
 
     static positionObjectBehind(frontObj: THREE.Object3D, behindObj: THREE.Object3D,
-            distance: number) {
-        behindObj.rotation.copy(frontObj.rotation);
+            distance: number, ignoreRotation: boolean = false) {
+        if (!ignoreRotation) behindObj.rotation.copy(frontObj.rotation);
 
-        behindObj.position.copy(Utils.getPositionObjectBehind(frontObj, distance));
+        behindObj.position.copy(Utils.getPositionObjectBehind(frontObj, distance, ignoreRotation));
     }
 
 }

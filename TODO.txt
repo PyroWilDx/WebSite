@@ -1,10 +1,9 @@
-OBJECT APPEARING "POP" ANIMATION
+take into account dt for speeds.
+
 OBJECT ROTATION ANIM
 OBJECT SDL2 FADES AWAY ANIMATION
 
-html text finish all on same line
-
-uncontrollable camera when lerping to flag
+gerer les probleme lie a la taille de l'ecran
 
 BUTTON oR ESCAPE TO GO OUT OF PROJECT
 

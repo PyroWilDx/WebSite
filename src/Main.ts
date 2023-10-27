@@ -1,6 +1,6 @@
+// @ts-ignore
 import TWEEN from '@tweenjs/tween.js';
 import * as THREE from 'three';
-// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Flag } from './Flag.ts';
 import { Galaxy } from './Galaxy.ts';
 import { Planet } from './Planet.ts';
@@ -12,11 +12,8 @@ import './style.css';
 // Inits
 Scene.initScene();
 
-// const controls = new OrbitControls(Scene.camera, Scene.renderer.domElement);
-
 // World Building
 let galaxy: Galaxy = Scene.galaxy;
-// galaxy.addBackgroundImg("res/imgs/Background.png");
 galaxy.addStars(600, "res/3d/MarioStar/scene.gltf");
 
 let sun = new Planet("res/imgs/Sun.jpg", 40,
@@ -41,16 +38,25 @@ galaxy.addPlanet(sun2);
 galaxy.addPlanet(new Planet("res/imgs/Sun.jpg", 1,
 	new THREE.Vector3(0, 0, 0)));
 
-let player = new Player(new THREE.Vector3(0, 0, 0),
-	0.01, "res/3d/RobotUFO/scene.gltf");
-galaxy.setPlayer(player);
+Utils.gltfLoader.load("res/3d/RobotUFO/scene.gltf", ( gltf ) => {
+	galaxy.setPlayer(new Player(gltf.scene, 0.01));
+});
 
 // Event Listeners
+window.addEventListener('resize', () => {
+	Scene.updateRenderSize();
+});
+
 window.addEventListener('mousedown', (event) => {
 	if (event.button === 0) {
 		Utils.isMouseDown = true;
 
 		galaxy.updateCurrentHoldFlag();
+
+		if (Utils.mousePosition.x < Scene.quitProjectDisplayerLeftX ||
+				Utils.mousePosition.x > Scene.quitProjectDisplayerRightX) {
+			Scene.setRemoveDisplayerMouseX(Utils.mousePosition.x);
+		}
 	}
 });
   
@@ -59,29 +65,21 @@ window.addEventListener('mouseup', (event) => {
 		galaxy.checkFlagOnMouseUp();
 
 		Utils.isMouseDown = false;
+
+		let rmDisplayerMouseX = Scene.getRemoveDisplayerMouseX();
+		let leftX = Scene.quitProjectDisplayerLeftX;
+		let rightX = Scene.quitProjectDisplayerRightX;
+		if (rmDisplayerMouseX != 0 && 
+				(rmDisplayerMouseX < leftX && Utils.mousePosition.x < leftX) || 
+				(rmDisplayerMouseX > rightX && Utils.mousePosition.x > rightX)) {
+			Scene.removeProjectDisplayer();
+		}
+		Scene.setRemoveDisplayerMouseX(0);
 	}
 });
 
 window.addEventListener('mousemove', (event) => {
 	Utils.updateMousePosition(event);
-});
-
-window.addEventListener('mousemove', () => {
-	galaxy.rayCastFlags();
-	galaxy.rayCastAll();
-});
-  
-window.addEventListener('mousemove', () => {
-	if (Utils.isMouseDown) {
-		let dX = Utils.mousePosition.x - Utils.lastMousePosition.x;
-		let dY = Utils.mousePosition.y - Utils.lastMousePosition.y;
-	
-		const rotationSpeedX = 0.6;
-		const rotationSpeedY = 0.6;
-	
-		Scene.addCameraRotation(new THREE.Vector3(
-			dY * rotationSpeedY, dX * rotationSpeedX, 0));
-	}
 });
 
 window.addEventListener("keydown", function(event) {
@@ -105,8 +103,6 @@ function animate() {
 	TWEEN.update();
 
 	galaxy.updateFrame();
-
-	// controls.update();
 
 	Scene.updateFrame();
 }

@@ -3,7 +3,10 @@ import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { Scene } from './Scene';
 
 export class CameraLerp {
-    public static readonly maxLerpSpeed: number = 0.026;
+    private lerpSpeed: number;
+    private rotateSpeed: number;
+
+    private lookAtObject: boolean;
 
     private camera: THREE.PerspectiveCamera;
     private finalPosition: THREE.Vector3;
@@ -12,27 +15,32 @@ export class CameraLerp {
     private distEpsilon: number;
     private rotEpsilon: number;
 
-    // private currLerpSpeed: number;
-
     constructor(camera: THREE.PerspectiveCamera,
             finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface) {
+        this.lerpSpeed = 0.026;
+        this.rotateSpeed = 0.08;
+
+        this.lookAtObject = true;
+        
         this.camera = camera;
         this.finalPosition = finalPosition;
         this.lookObject = lookObject;
+        
 
         this.distEpsilon = 1;
-        this.rotEpsilon = 0.00002
+        this.rotEpsilon = 0.002
 
-        // this.currLerpSpeed = 0;
+        this.lookObject.onLookStart(this);
     }
 
     updateFrame() {
-        this.camera.position.lerp(this.finalPosition, CameraLerp.maxLerpSpeed);
-        // this.currLerpSpeed = Math.min(this.currLerpSpeed + 0.0001, CameraLerp.maxLerpSpeed)
+        this.camera.position.lerp(this.finalPosition, this.lerpSpeed);
 
         let tmpCam = this.camera.clone();
-        tmpCam.lookAt(this.lookObject.getObjectPosition());
-        this.camera.quaternion.slerp(tmpCam.quaternion, 0.08);
+        
+        if (this.lookAtObject) tmpCam.lookAt(this.lookObject.getObjectPosition());
+        
+        this.camera.quaternion.slerp(tmpCam.quaternion, this.rotateSpeed);
 
         this.lookObject.onLookProgress(this);
 
@@ -43,12 +51,21 @@ export class CameraLerp {
         }
     }
 
-    setEpsilons(distEpsilon: number, rotEpsilon: number) {
+    setSpeeds(lerpSpeed: number, rotateSpeed: number): void {
+        this.lerpSpeed = lerpSpeed;
+        this.rotateSpeed = rotateSpeed;
+    }
+
+    setLookAtObject(lookAtObject: boolean): void {
+        this.lookAtObject = lookAtObject;
+    }
+
+    setEpsilons(distEpsilon: number, rotEpsilon: number): void {
         this.distEpsilon = distEpsilon;
         this.rotEpsilon = rotEpsilon;
     }
 
-    setFinalPosition(finalPosition: THREE.Vector3) {
+    setFinalPosition(finalPosition: THREE.Vector3): void {
         this.finalPosition = finalPosition;
     }
 

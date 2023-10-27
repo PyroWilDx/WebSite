@@ -6,9 +6,12 @@ import { CameraLerp } from './CameraLerp';
 import { Galaxy } from './Galaxy';
 import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { ProjectDisplayer, ProjectDisplayerInterface } from './ProjectDisplayerInterface';
+import { Utils } from './Utils';
 
 export class Scene {
     public static readonly worldRadius: number = 2000;
+    public static readonly quitProjectDisplayerLeftX: number = -0.628;
+    public static readonly quitProjectDisplayerRightX: number = 0.612;
 
     public static galaxy: Galaxy;
 
@@ -22,6 +25,7 @@ export class Scene {
     public static cameraLerp: CameraLerp | null;
 
     public static projectDisplayer: ProjectDisplayer | null;
+    public static removeDisplayerMouseX: number;
 
     static initScene(): void {
         Scene.scene = new THREE.Scene();
@@ -77,12 +81,25 @@ export class Scene {
         Scene.effectComposer.addPass(pass);
     }
 
+    static updateRenderSize() {
+        Scene.camera.aspect = window.innerWidth / window.innerHeight;
+        Scene.camera.updateProjectionMatrix();
+
+        Scene.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
     static renderScene(): void {
         Scene.effectComposer.render();
     }
 
     static setCameraPosition(position: THREE.Vector3): void {
         Scene.camera.position.copy(position);
+    }
+
+    static addCameraPosition(addX: number, addY: number, addZ: number) {
+        this.camera.position.x += addX;
+        this.camera.position.y += addY;
+        this.camera.position.z += addZ;
     }
 
     static addCameraHeight(value: number) {
@@ -158,21 +175,29 @@ export class Scene {
 
     static removeProjectDisplayer(): void {
         if (Scene.isDisplayingProject()) {
+            // @ts-ignore
             Scene.projectDisplayer.displayed.style.display = "none";
 
+            // @ts-ignore
             let displayer = Scene.projectDisplayer.displayer;
-            
+
             Scene.projectDisplayer = null;
             
             displayer.onProjectHideDisplay();
 
             let player = this.galaxy.getPlayer();
             if (player != null) {
-                console.log("salut");
-                Scene.setCameraLerp(player.getObjectPosition(), player);
-                this.cameraLerp.setEpsilons(0.01, 0.00001);
+                Scene.setCameraLerp(player.getCameraPosition(), player);
             }
         }
+    }
+
+    static setRemoveDisplayerMouseX(removeDisplayerMouseX: number): void {
+        this.removeDisplayerMouseX = removeDisplayerMouseX;
+    }
+
+    static getRemoveDisplayerMouseX(): number {
+        return this.removeDisplayerMouseX;
     }
 
     static updateFrame(): void {
@@ -180,8 +205,11 @@ export class Scene {
             Scene.cameraLerp.updateFrame();
         }
         if (Scene.isDisplayingProject()) {
-            let elapsed = (new Date().getTime() - Scene.projectDisplayer.startTime)
+            // @ts-ignore
+            let elapsed = (Utils.getTime() - Scene.projectDisplayer.startTime)
+            // @ts-ignore
             Scene.projectDisplayer.displayed.style.opacity = (elapsed / 600).toString();
+            // @ts-ignore
             Scene.projectDisplayer.displayer.updateFrameDisplayer();
         }
         Scene.renderScene();

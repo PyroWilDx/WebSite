@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { Scene } from './Scene.ts';
 
-export class Star {
-    private starModel: THREE.Group<THREE.Object3DEventMap>;
+export class Star extends THREE.Group<THREE.Object3DEventMap> {
     private rotationSpeed: number;
     private moveSpeed: number;
     private basePosition: THREE.Vector3;
@@ -13,26 +12,29 @@ export class Star {
     constructor(starModel: THREE.Group<THREE.Object3DEventMap>, 
             rotationSpeed: number, moveSpeed: number, 
             basePosition: THREE.Vector3) {
-        this.starModel = starModel;
+        super();
+
+        this.add(starModel);
+
         this.rotationSpeed = rotationSpeed;
         this.moveSpeed = moveSpeed;
         this.basePosition = basePosition;
-        starModel.position.set(basePosition.x,
+        this.position.set(basePosition.x,
             basePosition.y, basePosition.z);
-        this.baseDistToOrigin = starModel.position.length();
+        this.baseDistToOrigin = this.position.length();
         this.currAngle = THREE.MathUtils.randFloat(0, 2 * Math.PI);
         this.rotDirection = (Math.random() < 0.5) ? 1 : -1;
 
-        Scene.addEntity(starModel);
+        Scene.addEntity(this);
     }
 
     updateFrame(): void {
-        this.starModel.rotation.x += this.rotationSpeed;
+        this.rotation.x += this.rotationSpeed;
 
         let baseX = this.basePosition.x;
         let baseY = this.basePosition.y;
         let baseZ = this.basePosition.z;
-        this.starModel.position.set(baseX + Math.cos(this.currAngle) * this.baseDistToOrigin,
+        this.position.set(baseX + Math.cos(this.currAngle) * this.baseDistToOrigin,
             baseY + Math.sin(this.currAngle) * this.baseDistToOrigin,
             baseZ + Math.cos(this.currAngle) * Math.sin(this.currAngle) * this.baseDistToOrigin);
     

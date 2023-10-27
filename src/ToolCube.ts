@@ -1,3 +1,4 @@
+// @ts-ignore
 import TWEEN from '@tweenjs/tween.js';
 import * as THREE from 'three';
 import { RayCastableInterface } from './RayCastableInterface';

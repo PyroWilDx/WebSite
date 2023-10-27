@@ -1,18 +1,20 @@
 import * as THREE from 'three';
+// @ts-ignore
 import flagGlowFragmentShader from './../res/shaders/flagGlowFragment.glsl';
+// @ts-ignore
 import flagGlowVertexShader from './../res/shaders/flagGlowVertex.glsl';
 import { CameraLerp } from './CameraLerp';
 import { CustomAnimation } from './CustomAnimation';
 import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { ProjectDisplayerInterface } from './ProjectDisplayerInterface';
+import { RayCastableInterface } from './RayCastableInterface';
 import { Scene } from './Scene';
 import { ToolCube } from './ToolCube';
 import { Utils } from './Utils';
 
-export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
+export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLookedInterface, ProjectDisplayerInterface {
     private flagW: number;
     private flagH: number;
-    private flagMesh: THREE.Mesh;
 
     private flagStickRadius: number;
     private flagStickH: number;
@@ -38,12 +40,10 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
     constructor(flagW: number, flagH: number, flagImgPath: string,
         flagStickRadius: number, flagStickH: number, flagStickColor: number,
         projSectionId: string, ...toolIconCubeImgs: string[]) {
-        this.flagW = flagW;
-        this.flagH = flagH;
-        
+
         let flagTexture = Utils.textureLoader.load(flagImgPath);
-        this.flagMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(flagW, flagH, flagW, flagH),
+
+        super(new THREE.PlaneGeometry(flagW, flagH, flagW, flagH),
             new THREE.MeshStandardMaterial({
                 map: flagTexture,
                 side: THREE.DoubleSide,
@@ -51,7 +51,10 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
                 emissiveMap: flagTexture
             })
         );
-        Scene.scene.add(this.flagMesh);
+        Scene.scene.add(this);
+
+        this.flagW = flagW;
+        this.flagH = flagH;
 
         this.flagStickRadius = flagStickRadius;
         this.flagStickH = flagStickH;
@@ -99,8 +102,23 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         this.DY2 = 3.02 / ratio;
     }
 
+    onRayCast(): void {
+        this.glowEffect(true);
+    }
+
+    onRayCastLeave(): void {
+        this.glowEffect(false);
+    }
+
     getObjectPosition(): THREE.Vector3 {
-        return this.flagMesh.position;
+        return this.position;
+    }
+
+    onLookStart(cameraLerp: CameraLerp): void {
+        this.glowEffect(true);
+
+        let player = Scene.galaxy.getPlayer();
+        if (player != null) player.setPlayerLocked(true);
     }
 
     onLookProgress(cameraLerp: CameraLerp): void {
@@ -149,14 +167,14 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
     glowEffect(start: boolean): void {
         if (start) {
             Utils.setEmissiveMesh(this.flagStickMesh, this.flagStickColor);
-            Utils.setEmissiveMesh(this.flagMesh, "white");
+            Utils.setEmissiveMesh(this, "white");
             Scene.addEntity(this.flagGlowLight);
             Scene.addEntity(this.flagGlowMesh);
         } else {
             if (Scene.getCameraLerpObject() != this &&
                     Scene.getProjectDisplayer() != this) {
                 Utils.removeEmissiveMesh(this.flagStickMesh);
-                Utils.removeEmissiveMesh(this.flagMesh);
+                Utils.removeEmissiveMesh(this);
                 Scene.removeEntity(this.flagGlowLight);
                 Scene.removeEntity(this.flagGlowMesh);
             }
@@ -169,7 +187,7 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         flagPosition.y += this.flagStickH - this.flagH / 2;
         flagPosition.x += this.flagW / 2 + this.flagStickRadius;
         flagStickPosition.y += this.flagStickH / 2;
-        this.flagMesh.position.copy(flagPosition);
+        this.position.copy(flagPosition);
         this.flagStickMesh.position.copy(flagStickPosition);
         this.flagGlowLight.position.copy(flagPosition);
         this.flagGlowMesh.position.copy(flagPosition);
@@ -193,21 +211,19 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
         if (Scene.getProjectDisplayer() != this) {
             Scene.removeProjectDisplayer();
 
-            let finalPosition = this.flagMesh.position.clone();
+            let finalPosition = this.position.clone();
             finalPosition.z += 60;
             Scene.setCameraLerp(finalPosition, this);
-
-            this.glowEffect(true);
         }
     }
 
     updateFrame(): void {
-        let position = this.flagMesh.geometry.attributes.position;
+        let vPositions = this.geometry.attributes.position;
 
-        for (let i = 0; i < position.count; i++) {
-            const x = position.getX(i);
-            const y = position.getY(i);
-            const t = Utils.clock.getElapsedTime();
+        for (let i = 0; i < vPositions.count; i++) {
+            const x = vPositions.getX(i);
+            const y = vPositions.getY(i);
+            const t = Utils.getElapsedTime();
 
             const waveX1 = this.AX1 * Math.sin(x * this.DX1 + t * 3.02);
             const waveX2 = this.AX2 * Math.sin(x * this.DX2 + t * 2);
@@ -215,14 +231,10 @@ export class Flag implements ObjectLookedInterface, ProjectDisplayerInterface {
             const waveY2 = this.AY2 * Math.sin(y * this.DY2 + t * 0.36);
             const ig = (x + this.halfFlagW) / this.flagW;
             
-            position.setZ(i, (waveX1 + waveX2 + waveY1 + waveY2) * ig);
+            vPositions.setZ(i, (waveX1 + waveX2 + waveY1 + waveY2) * ig);
         }
 
-        this.flagMesh.geometry.attributes.position.needsUpdate = true;
+        this.geometry.attributes.position.needsUpdate = true;
     }
-
-    getMesh(): THREE.Mesh {
-        return this.flagMesh;
-    } 
 
 }

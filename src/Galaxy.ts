@@ -13,6 +13,8 @@ export class Galaxy {
     private allPlanets: Planet[];
     private player: Player | null;
 
+    private lastRayCastTime: number;
+
     private currHoldFlag: Flag | null;
     private currFlag: Flag | null;
 
@@ -23,6 +25,8 @@ export class Galaxy {
         this.allStars = [];
         this.allPlanets = [];
         this.player = null;
+
+        this.lastRayCastTime = 0;
 
         this.currHoldFlag = null;
         this.currFlag = null;
@@ -44,7 +48,7 @@ export class Galaxy {
     addStars(nStars: number, modelPath: string): void {
         Utils.gltfLoader.load(modelPath, ( gltf ) => {
             let baseStarModel = gltf.scene;
-            Utils.setEmissiveGLTF(baseStarModel, 50);
+            Utils.setEmissiveGLTF(baseStarModel, 52);
             for (let i = 0; i < nStars; i++) {
                 let currStar: Star = new Star(baseStarModel.clone(),
                     THREE.MathUtils.randFloat(0.004, 0.02),
@@ -68,67 +72,43 @@ export class Galaxy {
         return this.player;
     }
 
-    getAllFlagsMesh(): THREE.Object3D[] {
-        let flags: THREE.Object3D[] = [];
-        for (const currPlanet of this.allPlanets) {
-            let flag = currPlanet.getFlag();
-            if (flag != null) flags.push(flag.getMesh());
-        }
-        return flags;
-    }
-
-    getFlagFromMesh(flagMesh: THREE.Mesh): Flag | null {
-        for (const currPlanet of this.allPlanets) {
-            let flag = currPlanet.getFlag();
-            if (flag != null) {
-                if (flag.getMesh() === flagMesh) {
-                    return flag;
-                }
-            }
-        }
-        return null;
-    }
-
     updateCurrentHoldFlag(): void {
-        this.rayCastFlags();
+        this.rayCastObjects(true);
         this.currHoldFlag = this.currFlag;
     }
 
-    rayCastFlags(): void {
-        Utils.rayCaster.setFromCamera(Utils.mousePosition, Scene.camera);
-        const intersected = Utils.rayCaster.intersectObjects(
-            this.getAllFlagsMesh());
-        if (intersected.length > 0) {
-            const obj = intersected[0].object;
-            if (obj instanceof THREE.Mesh) {
-                if (this.currFlag != null) this.currFlag.glowEffect(false);
-
-                let flagMesh = obj as THREE.Mesh;                
-                this.currFlag = this.getFlagFromMesh(flagMesh);
-                if (this.currFlag != null) this.currFlag.glowEffect(true);
-                return;
-            }
-        }
-        if (this.currFlag != null) {
-            this.currFlag.glowEffect(false);
-            this.currFlag = null;
-        }
-    }
-
-    rayCastAll() {
+    rayCastObjects(justFindFirstFlag: boolean = false): void {
         Utils.rayCaster.setFromCamera(Utils.mousePosition, Scene.camera);
         const intersected = Utils.rayCaster.intersectObjects(Scene.getChildren());
+
+        let foundFlag = false;
         const currCastedObjects: RayCastableInterface[] = []
+
         for (let i = 0; i < intersected.length; i++) {
-            const obj = intersected[0].object;
+            const obj = intersected[i].object;
+
             if (Utils.implementsRayCastable(obj)) {
-                const castedObj = (obj as unknown) as RayCastableInterface;
+                if (obj instanceof Flag) {
+                    if (foundFlag) continue;
+                    this.currFlag = obj as Flag;
+                    foundFlag = true;
+
+                    if (justFindFirstFlag) return;
+                }
+
+                // @ts-ignore
+                const castedObj = obj as RayCastableInterface;
                 currCastedObjects.push(castedObj);
                 if (!this.rayCastedObjects.includes(castedObj)) {
                     castedObj.onRayCast();
                 }
+
             }
         }
+
+        if (!foundFlag) this.currFlag = null;
+
+        if (justFindFirstFlag) return;
 
         for (const lastCastedObj of this.rayCastedObjects) {
             if (!currCastedObjects.includes(lastCastedObj)) {
@@ -139,14 +119,25 @@ export class Galaxy {
         this.rayCastedObjects = currCastedObjects;
     }
 
+    rayCast() {
+        let currTime = Utils.getTime();
+        if (currTime - this.lastRayCastTime < 20) return;
+
+        this.rayCastObjects();
+
+        this.lastRayCastTime = currTime;
+    }
+
     checkFlagOnMouseUp(): void {
         if (this.currHoldFlag != null) {
-            this.rayCastFlags();
+            this.rayCastObjects(true);
             if (this.currHoldFlag == this.currFlag) this.currHoldFlag.onClick();
         }
     }
 
     updateFrame(): void {
+        this.rayCast();
+
         for (const currStar of this.allStars) {
             currStar.updateFrame();
         }
@@ -155,4 +146,5 @@ export class Galaxy {
         }
         if (this.player != null) this.player.updateFrame();
     }
+    
 }
