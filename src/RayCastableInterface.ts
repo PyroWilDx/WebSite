@@ -1,4 +1,4 @@
 export interface RayCastableInterface {
-    onRayCast(): void;
+    onRayCast(): boolean;
     onRayCastLeave(): void;
 }

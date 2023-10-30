@@ -13,6 +13,10 @@ import { ToolCube } from './ToolCube';
 import { Utils } from './Utils';
 
 export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLookedInterface, ProjectDisplayerInterface {
+    public static readonly flagLerpDistance: number = 40;
+    
+    private flagVidTexture: THREE.VideoTexture | null;
+
     private flagW: number;
     private flagH: number;
 
@@ -27,6 +31,9 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
     private flagProjectSectionId: string;
     private toolCubes: ToolCube[];
 
+    private xZoomShift: number;
+    private yZoomShift: number;
+
     private halfFlagW: number;
     private AX1: number;
     private DX1: number;
@@ -37,21 +44,37 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
     private AY2: number;
     private DY2: number; 
 
-    constructor(flagW: number, flagH: number, flagImgPath: string,
-        flagStickRadius: number, flagStickH: number, flagStickColor: number,
-        projSectionId: string, ...toolIconCubeImgs: string[]) {
+    constructor(flagW: number, flagH: number, 
+            flagImgPath: string | null, flagVidPath: string | null,
+            flagStickRadius: number, flagStickH: number, flagStickColor: number,
+            projSectionId: string, xZoomShift: number, yZoomShift: number,
+            ...toolIconCubeImgs: string[]) {
 
-        let flagTexture = Utils.textureLoader.load(flagImgPath);
+        let flagTexture: THREE.Texture | THREE.VideoTexture;
+        if (flagImgPath != null) flagTexture = Utils.textureLoader.load(flagImgPath);
+        else {
+            const vid = document.createElement("video");
+            if (flagVidPath != null) vid.src = flagVidPath;
+            vid.autoplay = true;
+            vid.loop = true;
 
-        super(new THREE.PlaneGeometry(flagW, flagH, flagW, flagH),
-            new THREE.MeshStandardMaterial({
+            flagTexture = new THREE.VideoTexture(vid);
+            flagTexture.minFilter = THREE.LinearFilter;
+            flagTexture.magFilter = THREE.LinearFilter;
+        }
+
+        super(new THREE.PlaneGeometry(flagW, flagH, flagW / 2, flagH / 2),
+            new THREE.MeshBasicMaterial({
                 map: flagTexture,
                 side: THREE.DoubleSide,
-                emissiveIntensity: 0.46,
-                emissiveMap: flagTexture
+                // emissiveIntensity: 0.46,
+                // emissiveMap: flagTexture
             })
         );
         Scene.scene.add(this);
+
+        if (flagTexture instanceof THREE.VideoTexture) this.flagVidTexture = flagTexture;
+        else this.flagVidTexture = null;
 
         this.flagW = flagW;
         this.flagH = flagH;
@@ -85,9 +108,12 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
         this.flagProjectSectionId = projSectionId;
         this.toolCubes = [];
         for (const imgPath of toolIconCubeImgs) {
-            let cubeMesh = new ToolCube(imgPath);
-            this.toolCubes.push(cubeMesh);
+            let toolCube = new ToolCube(imgPath);
+            this.toolCubes.push(toolCube);
         }
+
+        this.xZoomShift = xZoomShift;
+        this.yZoomShift = yZoomShift;
 
         this.halfFlagW = this.flagW / 2;
 
@@ -102,8 +128,10 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
         this.DY2 = 3.02 / ratio;
     }
 
-    onRayCast(): void {
+    onRayCast(): boolean {
         this.glowEffect(true);
+
+        return true;
     }
 
     onRayCastLeave(): void {
@@ -114,14 +142,14 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
         return this.position;
     }
 
-    onLookStart(cameraLerp: CameraLerp): void {
+    onLookStart(_cameraLerp: CameraLerp): void {
         this.glowEffect(true);
 
         let player = Scene.galaxy.getPlayer();
         if (player != null) player.setPlayerLocked(true);
     }
 
-    onLookProgress(cameraLerp: CameraLerp): void {
+    onLookProgress(_cameraLerp: CameraLerp): void {
 
     }
 
@@ -137,46 +165,67 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
         let projectSection = document.getElementById(this.flagProjectSectionId);
         if (projectSection != null) {
             Scene.setProjectDisplayer(this, projectSection);
+            
+            let currCubePosition = this.position.clone();
+            const addX = 85.1;
+            currCubePosition.x -= addX;
+            currCubePosition.y += 30 / Scene.getScreenSizeRatio() + this.getYZoomShiftRatioed();
+            for (let i = 0; i < this.toolCubes.length; i++) {
+                this.toolCubes[i].setPosition(currCubePosition, i % 2 == 0);
 
-            for (const cubeMesh of this.toolCubes) {
-                Scene.addEntity(cubeMesh);
-                CustomAnimation.popAnimation(cubeMesh);
+                if (i % 2 == 1) currCubePosition.x -= 2 * addX;
+                else currCubePosition.x += 2 * addX;
+
+                currCubePosition.y -= 1.4 * ToolCube.cubeSize / Scene.getScreenSizeRatio();
             }
 
-            // this.flagMesh.visible = false;
+            for (const toolCube of this.toolCubes) {
+                toolCube.addSelf();
+                CustomAnimation.popInAnimation(toolCube, 1000);
+            }
+
+            this.glowEffect(false, true);
+
+            // this.visible = false;
             // this.flagStickMesh.visible = false;
         }
     }
 
     updateFrameDisplayer(): void {
-        for (const cubeMesh of this.toolCubes) {
-            cubeMesh.rotate();
+        for (const toolCube of this.toolCubes) {
+            toolCube.rotate();
         }
     }
 
     onProjectHideDisplay(): void {
         this.glowEffect(false);
-        // this.flagMesh.visible = true;
+        // this.visible = true;
         // this.flagStickMesh.visible = true;
 
-        for (const cubeMesh of this.toolCubes) {
-            Scene.removeEntity(cubeMesh);
+        for (const toolCube of this.toolCubes) {
+            CustomAnimation.popOutAnimation(toolCube, 200,
+                () => { toolCube.removeSelf(); }, true);
         }
     }
 
-    glowEffect(start: boolean): void {
+    glowEffect(start: boolean, force: boolean = false): void {
         if (start) {
-            Utils.setEmissiveMesh(this.flagStickMesh, this.flagStickColor);
-            Utils.setEmissiveMesh(this, "white");
-            Scene.addEntity(this.flagGlowLight);
-            Scene.addEntity(this.flagGlowMesh);
-        } else {
             if (Scene.getCameraLerpObject() != this &&
                     Scene.getProjectDisplayer() != this) {
+                Utils.setEmissiveMesh(this.flagStickMesh, this.flagStickColor);
+                // Utils.setEmissiveMesh(this, "white");
+                // Scene.addEntity(this.flagGlowLight);
+                Scene.addEntity(this.flagGlowMesh);
+                document.body.style.cursor = "pointer";
+            }
+        } else {
+            if (force || (Scene.getCameraLerpObject() != this &&
+                    Scene.getProjectDisplayer() != this)) {
                 Utils.removeEmissiveMesh(this.flagStickMesh);
-                Utils.removeEmissiveMesh(this);
-                Scene.removeEntity(this.flagGlowLight);
+                // Utils.removeEmissiveMesh(this);
+                // Scene.removeEntity(this.flagGlowLight);
                 Scene.removeEntity(this.flagGlowMesh);
+                document.body.style.cursor = "auto";
             }
         }
     }
@@ -191,20 +240,11 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
         this.flagStickMesh.position.copy(flagStickPosition);
         this.flagGlowLight.position.copy(flagPosition);
         this.flagGlowMesh.position.copy(flagPosition);
+    }
 
-        let currCubePosition = flagPosition;
-        const addX = 156;
-        currCubePosition.x -= addX;
-        currCubePosition.y += 46;
-        currCubePosition.z -= 42;
-        for (let i = 0; i < this.toolCubes.length; i++) {
-            this.toolCubes[i].position.copy(currCubePosition);
-
-            if (i % 2) currCubePosition.x -= 2 * addX;
-            else currCubePosition.x += 2 * addX;
-
-            currCubePosition.y -= 20;
-        }
+    getYZoomShiftRatioed(): number {
+        return this.yZoomShift - this.yZoomShift * Scene.getScreenWidthRatio() 
+                                + this.yZoomShift * Scene.getScreenHeightRatio();
     }
 
     onClick(): void {
@@ -212,8 +252,16 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
             Scene.removeProjectDisplayer();
 
             let finalPosition = this.position.clone();
-            finalPosition.z += 60;
-            Scene.setCameraLerp(finalPosition, this);
+            let lookPosition = finalPosition.clone();
+            finalPosition.z += Math.min(this.flagW, this.flagH) / Scene.getScreenSizeRatio();
+
+            finalPosition.x += this.xZoomShift;
+            lookPosition.x += this.xZoomShift;
+            finalPosition.y += this.getYZoomShiftRatioed();
+            lookPosition.y += this.getYZoomShiftRatioed();
+
+            let cameraLerp = Scene.setCameraLerp(finalPosition, this);
+            cameraLerp.setLookPosition(lookPosition);
         }
     }
 
@@ -235,6 +283,8 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
         }
 
         this.geometry.attributes.position.needsUpdate = true;
+
+        if (this.flagVidTexture != null) this.flagVidTexture.needsUpdate = true;
     }
 
 }

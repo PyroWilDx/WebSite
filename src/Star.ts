@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Scene } from './Scene.ts';
+import { Utils } from './Utils.ts';
 
 export class Star extends THREE.Group<THREE.Object3DEventMap> {
     private rotationSpeed: number;
@@ -29,7 +30,7 @@ export class Star extends THREE.Group<THREE.Object3DEventMap> {
     }
 
     updateFrame(): void {
-        this.rotation.x += this.rotationSpeed;
+        this.rotation.x += this.rotationSpeed * Utils.dt;
 
         let baseX = this.basePosition.x;
         let baseY = this.basePosition.y;
@@ -38,7 +39,7 @@ export class Star extends THREE.Group<THREE.Object3DEventMap> {
             baseY + Math.sin(this.currAngle) * this.baseDistToOrigin,
             baseZ + Math.cos(this.currAngle) * Math.sin(this.currAngle) * this.baseDistToOrigin);
     
-        this.currAngle += this.moveSpeed * this.rotDirection;
+        this.currAngle += this.moveSpeed * this.rotDirection * Utils.dt;
     }
 
 }

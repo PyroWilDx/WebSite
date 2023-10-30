@@ -77,7 +77,8 @@ export class Galaxy {
         this.currHoldFlag = this.currFlag;
     }
 
-    rayCastObjects(justFindFirstFlag: boolean = false): void {
+    rayCastObjects(justFindFirstFlag: boolean = false, 
+            justFindFirstObject: boolean = false): boolean {
         Utils.rayCaster.setFromCamera(Utils.mousePosition, Scene.camera);
         const intersected = Utils.rayCaster.intersectObjects(Scene.getChildren());
 
@@ -88,27 +89,30 @@ export class Galaxy {
             const obj = intersected[i].object;
 
             if (Utils.implementsRayCastable(obj)) {
+                if (justFindFirstObject) return true;
+
                 if (obj instanceof Flag) {
                     if (foundFlag) continue;
                     this.currFlag = obj as Flag;
                     foundFlag = true;
 
-                    if (justFindFirstFlag) return;
+                    if (justFindFirstFlag) return true;
                 }
 
                 // @ts-ignore
                 const castedObj = obj as RayCastableInterface;
-                currCastedObjects.push(castedObj);
+                let rayCastOK = true;
                 if (!this.rayCastedObjects.includes(castedObj)) {
-                    castedObj.onRayCast();
+                    rayCastOK = castedObj.onRayCast();
                 }
+                if (rayCastOK) currCastedObjects.push(castedObj);
 
             }
         }
 
         if (!foundFlag) this.currFlag = null;
 
-        if (justFindFirstFlag) return;
+        if (justFindFirstFlag) return false;
 
         for (const lastCastedObj of this.rayCastedObjects) {
             if (!currCastedObjects.includes(lastCastedObj)) {
@@ -117,9 +121,11 @@ export class Galaxy {
         }
 
         this.rayCastedObjects = currCastedObjects;
+
+        return (this.rayCastedObjects.length != 0);
     }
 
-    rayCast() {
+    rayCast(): void {
         let currTime = Utils.getTime();
         if (currTime - this.lastRayCastTime < 20) return;
 
@@ -130,8 +136,9 @@ export class Galaxy {
 
     checkFlagOnMouseUp(): void {
         if (this.currHoldFlag != null) {
-            this.rayCastObjects(true);
-            if (this.currHoldFlag == this.currFlag) this.currHoldFlag.onClick();
+            if(this.rayCastObjects(true) && this.currHoldFlag == this.currFlag) {
+                this.currHoldFlag.onClick();
+            }
         }
     }
 

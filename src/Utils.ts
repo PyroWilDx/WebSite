@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { Scene } from './Scene';
 import './style.css';
 
 export class Utils {
@@ -7,6 +8,10 @@ export class Utils {
     private constructor() {}
 
     public static readonly clock: THREE.Clock = new THREE.Clock();
+
+    public static readonly normalizeDtFactor = 8.0;
+    public static lastTime: number = Utils.getTime();
+    public static dt: number = 0;
 
     public static readonly rayCaster: THREE.Raycaster = new THREE.Raycaster();
     
@@ -42,11 +47,18 @@ export class Utils {
     }
 
     static getElapsedTime(): number {
-        return this.clock.getElapsedTime();
+        return Utils.clock.getElapsedTime();
     }
 
     static getTime(): number {
         return new Date().getTime();
+    }
+
+    static updateDt(): void {
+        let currTime = Utils.getTime();
+        Utils.dt = currTime - Utils.lastTime;
+        Utils.dt /= Utils.normalizeDtFactor;
+        Utils.lastTime = currTime;
     }
 
     static updateMousePosition(event: MouseEvent): void {
@@ -55,17 +67,24 @@ export class Utils {
         Utils.mousePosition.y = -(event.clientY / window.innerHeight) * 2 + 1;
     }
 
+    static getMouseScreenPosition(): THREE.Vector2 {
+        let resPos = new THREE.Vector2();
+        resPos.x = ((this.mousePosition.x + 1) / 2) * window.innerWidth;
+        resPos.y = ((this.mousePosition.y + 1) / 2) * window.innerHeight;
+        return resPos;
+    }
+
     static updateKeyMap(key: string, value: boolean): void {
-        this.keyMap[key] = value;
+        Utils.keyMap[key] = value;
         if (key >= 'a' && key <= 'z') {
-            this.keyMap[key.toUpperCase()] = value;
+            Utils.keyMap[key.toUpperCase()] = value;
         } else if (key >= 'A' && key <= 'Z') {
-            this.keyMap[key.toLowerCase()] = value;
+            Utils.keyMap[key.toLowerCase()] = value;
         }
     }
 
     static isKeyPressed(key: string): boolean {
-        return this.keyMap[key];
+        return Utils.keyMap[key];
     }
 
     static setEmissiveMesh(mesh: THREE.Mesh,
@@ -113,6 +132,51 @@ export class Utils {
         return new DOMRect(0, 0, 0, 0);
     }
 
+    static getElementRectInvisible(elId: string, elParentId: string): DOMRect {
+        const el = document.getElementById(elId);
+        const elParent = document.getElementById(elParentId);
+
+        if (el != null && elParent != null) {
+            elParent.style.visibility = "hidden";
+            elParent.style.display = "";
+
+            let resRect = Utils.getElementRect(elId);
+
+            elParent.style.display = "none";
+            elParent.style.visibility = "visible";
+
+            return resRect;
+        }
+        return new DOMRect(0, 0, 0, 0);
+    }
+
+    static getElementMiddle(rect: DOMRect): THREE.Vector2 {
+        let middlePos = new THREE.Vector2;
+        middlePos.x = rect.x + rect.width / 2;
+        middlePos.y = window.innerHeight - rect.y - rect.height / 2;
+        return middlePos;
+    }
+
+    static getScrollbarWidth(): number {
+        let outer = document.createElement('div');
+        outer.style.visibility = 'hidden';
+        outer.style.overflow = 'scroll';
+        // @ts-ignore
+        outer.style.msOverflowStyle = 'scrollbar';
+        document.body.appendChild(outer);
+
+        let inner = document.createElement('div');
+        outer.appendChild(inner);
+
+        let scrollbarWidth = (outer.offsetWidth - inner.offsetWidth);
+
+        // @ts-ignore
+        outer.parentNode.removeChild(outer);
+      
+        return (1.1 * scrollbarWidth / window.innerWidth) * 2
+      
+      }
+
     static implementsRayCastable(obj: THREE.Object3D): boolean {
         return (
             'onRayCast' in obj && typeof obj.onRayCast === 'function' &&
@@ -120,7 +184,28 @@ export class Utils {
         );
     }
 
-    static getPositionObjectBehind(frontObj: THREE.Object3D, 
+    static getObjectScreenPosition(obj: THREE.Object3D): THREE.Vector2 {
+        let pos3D = new THREE.Vector3().copy(obj.position).project(Scene.getCamera());
+
+        let pos2D = new THREE.Vector2(pos3D.x, pos3D.y);
+        pos2D.x = ((pos2D.x + 1) / 2) * window.innerWidth;
+        pos2D.y = ((pos2D.y + 1) / 2) * window.innerHeight;
+
+        return pos2D;
+    }
+
+    static getObjectScreenPositionOnCameraPos(obj: THREE.Object3D, cameraPos: THREE.Vector3): THREE.Vector2 {
+        let lastCameraPos = Scene.getCamera().position.clone();
+
+        Scene.setCameraPosition(cameraPos);
+        Scene.renderScene();
+        let pos2D = Utils.getObjectScreenPosition(obj);
+
+        Scene.setCameraPosition(lastCameraPos);
+        return pos2D;
+    }
+
+    static getObjectBehindPosition(frontObj: THREE.Object3D, 
             distance: number, ignoreRotation: boolean = false): THREE.Vector3 {
         let rot = frontObj.rotation.clone();
         if (ignoreRotation) frontObj.rotation.set(0, 0, 0);
@@ -142,7 +227,7 @@ export class Utils {
             distance: number, ignoreRotation: boolean = false) {
         if (!ignoreRotation) behindObj.rotation.copy(frontObj.rotation);
 
-        behindObj.position.copy(Utils.getPositionObjectBehind(frontObj, distance, ignoreRotation));
+        behindObj.position.copy(Utils.getObjectBehindPosition(frontObj, distance, ignoreRotation));
     }
 
 }

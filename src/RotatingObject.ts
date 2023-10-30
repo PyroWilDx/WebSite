@@ -16,9 +16,9 @@ export class RotatingObject extends THREE.Mesh {
     }
 
     rotate(): void {
-        this.rotation.x += this.rSpeed.x;
-        this.rotation.y += this.rSpeed.y;
-        this.rotation.z += this.rSpeed.z;
+        this.rotation.x += this.rSpeed.x * Utils.dt;
+        this.rotation.y += this.rSpeed.y * Utils.dt;
+        this.rotation.z += this.rSpeed.z * Utils.dt;
     }
 
 }

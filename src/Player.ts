@@ -5,13 +5,15 @@ import { Scene } from "./Scene";
 import { Utils } from "./Utils";
 
 export class Player extends THREE.Group<THREE.Object3DEventMap> implements ObjectLookedInterface {
-    private static readonly addCameraHeight = 10;
+    private static readonly cameraFollowFactor: number = 0.8;
+    private static readonly addCameraHeight: number = 12;
 
     private playerSpeed: THREE.Vector3;
     private playerLight: THREE.PointLight;
 
     private playerLocked: boolean;
 
+    private movingElapsedTime: number;
     private realY: number;
 
     constructor(playerModel: THREE.Group<THREE.Object3DEventMap>, scale: number) {
@@ -32,6 +34,7 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
 
         this.playerLocked = false;
 
+        this.movingElapsedTime = 0;
         this.realY = 0;
 
         Scene.setCameraLerp(this.getCameraPosition(), this);
@@ -64,8 +67,8 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
     }
 
     getCameraPosition(): THREE.Vector3 {
-        let resPosition = Utils.getPositionObjectBehind(this, -30, true);
-        resPosition.x += 30;
+        let resPosition = Utils.getObjectBehindPosition(this, -30, true);
+        // resPosition.x += 20;
         resPosition.y = this.realY + Player.addCameraHeight;
         return resPosition;
     }
@@ -73,6 +76,7 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
     addPositionX(x: number): void {
         if (!this.playerLocked) {
             this.position.x += x;
+            Scene.addCameraPosition(x * Player.cameraFollowFactor, 0, 0);
         }
     }
 
@@ -80,12 +84,14 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
         if (!this.playerLocked) {
             this.position.y += y;
             this.realY += y;
+            Scene.addCameraPosition(0, y * Player.cameraFollowFactor, 0);
         }
     }
 
     addPositionZ(z: number): void {
         if (!this.playerLocked) {
             this.position.z += z;
+            Scene.addCameraPosition(0, 0, z * Player.cameraFollowFactor);
         }
     }
 
@@ -93,25 +99,25 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
         this.rotation.y += 0.01;
 
         if (!this.playerLocked) {
-            if (Utils.isKeyPressed('z') || Utils.isKeyPressed('Z')) {
-                this.addPositionZ(-this.playerSpeed.z);
-            }
-            if (Utils.isKeyPressed('s') || Utils.isKeyPressed('S')) {
-                this.addPositionZ(this.playerSpeed.z);
-            }
-            if (Utils.isKeyPressed('d') || Utils.isKeyPressed('D')) {
-                this.addPositionX(this.playerSpeed.x);
-            }
-            if (Utils.isKeyPressed('q') || Utils.isKeyPressed('Q')) {
-                this.addPositionX(-this.playerSpeed.x);
-            }
-            if (Utils.isKeyPressed(" ")) {
-                this.addPositionY(this.playerSpeed.y);
-            }
-            if (Utils.isKeyPressed("Shift")) {
-                this.addPositionY(-this.playerSpeed.y);
-            }
+            let forward = Utils.isKeyPressed('z') || Utils.isKeyPressed('Z');
+            let backward = Utils.isKeyPressed('s') || Utils.isKeyPressed('S');
+            let right = Utils.isKeyPressed('d') || Utils.isKeyPressed('D');
+            let left = Utils.isKeyPressed('q') || Utils.isKeyPressed('Q');
+            let up = Utils.isKeyPressed(" ");
+            let down = Utils.isKeyPressed("Shift");
+            let moved = forward || backward || right || left;
+
+            if (forward) this.addPositionZ(-this.playerSpeed.z * Utils.dt);
+            if (backward) this.addPositionZ(this.playerSpeed.z * Utils.dt);
+            if (right) this.addPositionX(this.playerSpeed.x * Utils.dt);
+            if (left) this.addPositionX(-this.playerSpeed.x * Utils.dt);
+            if (up) this.addPositionY(this.playerSpeed.y * Utils.dt);
+            if (down) this.addPositionY(-this.playerSpeed.y * Utils.dt);
+
+            if (moved) this.movingElapsedTime += Utils.dt;
         }
+
+        this.position.y = this.realY + 4 * Math.sin(Utils.getElapsedTime());
         
         this.playerLight.position.copy(this.position);
     }

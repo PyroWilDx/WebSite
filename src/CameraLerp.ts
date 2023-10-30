@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { Scene } from './Scene';
+import { Utils } from './Utils';
 
 export class CameraLerp {
     private lerpSpeed: number;
@@ -10,6 +11,7 @@ export class CameraLerp {
 
     private camera: THREE.PerspectiveCamera;
     private finalPosition: THREE.Vector3;
+    private lookPosition: THREE.Vector3 | null;
     private lookObject: ObjectLookedInterface;
     
     private distEpsilon: number;
@@ -24,9 +26,9 @@ export class CameraLerp {
         
         this.camera = camera;
         this.finalPosition = finalPosition;
+        this.lookPosition = null;
         this.lookObject = lookObject;
         
-
         this.distEpsilon = 1;
         this.rotEpsilon = 0.002
 
@@ -34,13 +36,18 @@ export class CameraLerp {
     }
 
     updateFrame() {
-        this.camera.position.lerp(this.finalPosition, this.lerpSpeed);
+        this.camera.position.lerp(this.finalPosition, this.lerpSpeed * Utils.dt);
 
         let tmpCam = this.camera.clone();
         
-        if (this.lookAtObject) tmpCam.lookAt(this.lookObject.getObjectPosition());
+        if (this.lookAtObject) {
+            let lookAtPos: THREE.Vector3;
+            if (this.lookPosition != null) lookAtPos = this.lookPosition;
+            else lookAtPos = this.lookObject.getObjectPosition();
+            tmpCam.lookAt(lookAtPos);
+        }
         
-        this.camera.quaternion.slerp(tmpCam.quaternion, this.rotateSpeed);
+        this.camera.quaternion.slerp(tmpCam.quaternion, this.rotateSpeed * Utils.dt);
 
         this.lookObject.onLookProgress(this);
 
@@ -67,6 +74,10 @@ export class CameraLerp {
 
     setFinalPosition(finalPosition: THREE.Vector3): void {
         this.finalPosition = finalPosition;
+    }
+
+    setLookPosition(lookPosition: THREE.Vector3): void {
+        this.lookPosition = lookPosition;
     }
 
     getLookObject(): ObjectLookedInterface {

@@ -7,7 +7,7 @@ import { Utils } from './Utils.ts';
 export class Planet extends RotatingObject {
 
     private radius: number;
-    private ringMeshes: RotatingObject[];
+    private rings: RotatingObject[];
     private flag: Flag | null;
 
     constructor(imgPath: string, radius: number,
@@ -33,7 +33,7 @@ export class Planet extends RotatingObject {
 
         this.radius = radius;
 
-        this.ringMeshes = [];
+        this.rings = [];
         this.flag = null;
     }
 
@@ -69,14 +69,14 @@ export class Planet extends RotatingObject {
         if (ringMesh != null) {
             this.getWorldPosition(ringMesh.position);
             Scene.addEntity(ringMesh);
-            this.ringMeshes.push(ringMesh);
+            this.rings.push(ringMesh);
         }
     }
     
     updateFrame(): void {
         this.rotate();
     
-        for (const currRingMesh of this.ringMeshes) {
+        for (const currRingMesh of this.rings) {
             currRingMesh.rotate();
         }
 

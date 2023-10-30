@@ -13,6 +13,11 @@ export class Scene {
     public static readonly quitProjectDisplayerLeftX: number = -0.628;
     public static readonly quitProjectDisplayerRightX: number = 0.612;
 
+    public static readonly baseWidth: number = 1448;
+    public static readonly baseHeight: number = 674;
+    public static readonly baseScreenRatio: number = Scene.baseWidth / Scene.baseHeight;
+    public static screenRatio: number = Scene.getScreenRatio();
+
     public static galaxy: Galaxy;
 
     public static scene: THREE.Scene;
@@ -24,8 +29,10 @@ export class Scene {
 
     public static cameraLerp: CameraLerp | null;
 
+    public static readonly fadeInDuration: number = 600;
     public static projectDisplayer: ProjectDisplayer | null;
-    public static removeDisplayerMouseX: number;
+    public static projBgContainerId: string = "main";
+    public static rmDisplayHold: boolean = false;
 
     static initScene(): void {
         Scene.scene = new THREE.Scene();
@@ -47,7 +54,7 @@ export class Scene {
         Scene.addEntity(Scene.globalLight);
 
         let renderPass = new RenderPass(Scene.scene, Scene.camera);
-        Scene.effectComposer = new EffectComposer(this.renderer);
+        Scene.effectComposer = new EffectComposer(Scene.renderer);
         Scene.effectComposer.addPass(renderPass);
 
         const bloomPass = new UnrealBloomPass(
@@ -62,7 +69,7 @@ export class Scene {
 
         Scene.projectDisplayer = null;
 
-        Scene.galaxy = new Galaxy(Scene.worldRadius);;
+        Scene.galaxy = new Galaxy(Scene.worldRadius);
     }
 
     static addEntity(entity: THREE.Object3D): void {
@@ -81,11 +88,31 @@ export class Scene {
         Scene.effectComposer.addPass(pass);
     }
 
-    static updateRenderSize() {
+    static getScreenRatio(): number {
+        return window.innerWidth / window.innerHeight;
+    }
+
+    static updateRenderSize(): void {
+        let ratio = Scene.getScreenRatio();
+
         Scene.camera.aspect = window.innerWidth / window.innerHeight;
         Scene.camera.updateProjectionMatrix();
-
+        
         Scene.renderer.setSize(window.innerWidth, window.innerHeight);
+
+        Scene.screenRatio = ratio;
+    }
+
+    static getScreenWidthRatio(): number {
+        return Scene.baseWidth / window.innerWidth;
+    }
+
+    static getScreenHeightRatio(): number {
+        return Scene.baseHeight / window.innerHeight;
+    }
+
+    static getScreenSizeRatio(): number {
+        return Scene.screenRatio / Scene.baseScreenRatio;
     }
 
     static renderScene(): void {
@@ -97,9 +124,9 @@ export class Scene {
     }
 
     static addCameraPosition(addX: number, addY: number, addZ: number) {
-        this.camera.position.x += addX;
-        this.camera.position.y += addY;
-        this.camera.position.z += addZ;
+        Scene.camera.position.x += addX;
+        Scene.camera.position.y += addY;
+        Scene.camera.position.z += addZ;
     }
 
     static addCameraHeight(value: number) {
@@ -111,7 +138,7 @@ export class Scene {
     }
 
     static addCameraRotation(addRotation: THREE.Vector3): void {
-        let cameraRotation = this.camera.rotation;
+        let cameraRotation = Scene.camera.rotation;
         let finalRotation = addRotation.clone();
         finalRotation.x += cameraRotation.x;
         finalRotation.y += cameraRotation.y;
@@ -124,15 +151,16 @@ export class Scene {
         return Scene.camera;
     }
 
-    static setCameraLerp(finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface): void {
-        let lastLookObject = this.getCameraLerpObject();
+    static setCameraLerp(finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface): CameraLerp {
+        let lastLookObject = Scene.getCameraLerpObject();
         
-        Scene.cameraLerp = new CameraLerp(this.camera,
-            finalPosition, lookObject);
+        Scene.cameraLerp = new CameraLerp(Scene.camera, finalPosition, lookObject);
 
         if (lastLookObject != null) {
             lastLookObject.onLookInterruption();
         }
+
+        return Scene.cameraLerp;
     }
 
     static removeCameraLerp(): void {
@@ -158,7 +186,7 @@ export class Scene {
         if (Scene.isDisplayingProject()) {
             Scene.removeProjectDisplayer();
         }
-        let startTime = new Date().getTime();
+        let startTime = Utils.getTime();
         Scene.projectDisplayer = {displayer, displayed, startTime};
     }
 
@@ -185,19 +213,11 @@ export class Scene {
             
             displayer.onProjectHideDisplay();
 
-            let player = this.galaxy.getPlayer();
+            let player = Scene.galaxy.getPlayer();
             if (player != null) {
                 Scene.setCameraLerp(player.getCameraPosition(), player);
             }
         }
-    }
-
-    static setRemoveDisplayerMouseX(removeDisplayerMouseX: number): void {
-        this.removeDisplayerMouseX = removeDisplayerMouseX;
-    }
-
-    static getRemoveDisplayerMouseX(): number {
-        return this.removeDisplayerMouseX;
     }
 
     static updateFrame(): void {
@@ -208,7 +228,7 @@ export class Scene {
             // @ts-ignore
             let elapsed = (Utils.getTime() - Scene.projectDisplayer.startTime)
             // @ts-ignore
-            Scene.projectDisplayer.displayed.style.opacity = (elapsed / 600).toString();
+            Scene.projectDisplayer.displayed.style.opacity = (elapsed / Scene.fadeInDuration).toString();
             // @ts-ignore
             Scene.projectDisplayer.displayer.updateFrameDisplayer();
         }
