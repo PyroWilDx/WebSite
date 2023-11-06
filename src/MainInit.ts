@@ -124,7 +124,7 @@ export class MainInit {
             }
         }
         
-        const tex = new THREE.TextureLoader().load("res/imgs/Rainbow.png");
+        const tex = new THREE.TextureLoader().load("res/imgs/Sun.jpg");
         tex.wrapS = THREE.RepeatWrapping;
         tex.repeat.set(MainInit.ls * 2, 0);
         const eIntensity = 10;

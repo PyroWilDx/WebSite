@@ -59,6 +59,7 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
             if (flagVidPath != null) vid.src = flagVidPath;
             vid.autoplay = true;
             vid.loop = true;
+            vid.muted = true;
 
             flagTexture = new THREE.VideoTexture(vid);
             flagTexture.minFilter = THREE.LinearFilter;
@@ -168,14 +169,15 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
             let currCubePosition = this.position.clone();
             const addX = 85.1;
             currCubePosition.x -= addX;
-            currCubePosition.y += 30 / Scene.getScreenSizeRatio() + this.getYZoomShiftRatioed();
+            let addY = -1.4 * ToolCube.cubeSize / Scene.getScreenSizeRatio();
+            currCubePosition.y -= addY * Math.ceil(this.toolCubes.length / 2);
             for (let i = 0; i < this.toolCubes.length; i++) {
                 this.toolCubes[i].setPosition(currCubePosition, i % 2 == 0);
 
                 if (i % 2 == 1) currCubePosition.x -= 2 * addX;
                 else currCubePosition.x += 2 * addX;
 
-                currCubePosition.y -= 1.4 * ToolCube.cubeSize / Scene.getScreenSizeRatio();
+                currCubePosition.y += addY;
             }
 
             for (const toolCube of this.toolCubes) {

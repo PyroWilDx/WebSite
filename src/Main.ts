@@ -3,6 +3,7 @@ import TWEEN from '@tweenjs/tween.js';
 import * as THREE from 'three';
 import { Flag } from './Flag.ts';
 import { Galaxy } from './Galaxy.ts';
+import { LoadingScreen } from './LoadingScreen.ts';
 import { MainInit } from './MainInit.ts';
 import { Planet } from './Planet.ts';
 import { Player } from './Player.ts';
@@ -15,47 +16,42 @@ Scene.initScene();
 
 // World Building
 let galaxy: Galaxy = Scene.galaxy;
-galaxy.addStars(600, "res/3d/MarioStar/scene.gltf");
+galaxy.addStars(400, "res/3d/MarioStar/scene.gltf");
 
-let sun = new Planet("res/imgs/Sun.jpg", 40,
-	new THREE.Vector3(0, 0, -200), 10, "red");
-sun.addRing(2, 10, null, 0x00BFFF);
-sun.addRing(2, 10, null, 0xDC143C);
-let flag = new Flag(106.6670, 60, 
-	"res/imgs/SkyDev0.png", null,
-	1, 120, 0xFFFFFF, "ProjectTest1", 0, -3.16,
+let kqPlanet = new Planet("res/imgs/Sun.jpg", 40,
+	new THREE.Vector3(0, -100, -200), 10, "red");
+kqPlanet.addRing(2, 10, null, 0x00BFFF);
+kqPlanet.addRing(2, 10, null, 0xDC143C);
+let kqFlag = new Flag(106.6670, 60, 
+	null, "res/vids/Keqing.mp4",
+	1, 120, 0xFFFFFF, "ProjectKeqing", 0, 0,
 	"res/imgs/Icon_C++.png",
-	"res/imgs/Icon_SDL2.png");
-sun.setFlag(flag);
-galaxy.addPlanet(sun);
+	"res/imgs/Icon_SDL2.png",
+	"res/imgs/Icon_CLion.png",
+	"res/imgs/Icon_Boost.png");
+kqPlanet.setFlag(kqFlag);
+galaxy.addPlanet(kqPlanet);
+LoadingScreen.updateCount();
 
-let sun2 = new Planet("res/imgs/Sun.jpg", 20,
-	new THREE.Vector3(-300, 0, -400), 10, "red");
-sun2.addRing(1, 6, null, 0xFFFFFF);
-let flag2 = new Flag(90, 60, 
-	"res/imgs/Flag.png", null,
-	1, 120, 0xFFFFFF, "ProjectTest2", 1, 2,
-	"res/imgs/Icon_C++.png",
-	"res/imgs/Icon_SDL2.png");
-sun2.setFlag(flag2);
-galaxy.addPlanet(sun2);
-
-let sun3 = new Planet("res/imgs/Sun.jpg", 20,
-	new THREE.Vector3(-100, 0, -400), 10, "red");
-sun3.addRing(1, 6, null, 0xFFFFFF);
-let flag3 = new Flag(60, 133.30, 
-	null, "res/imgs/Oregairu.mp4",
-	1, 200, 0xFFFFFF, "ProjectTest3", 1, 34,
-	"res/imgs/Icon_C++.png",
-	"res/imgs/Icon_SDL2.png");
-sun3.setFlag(flag3);
-galaxy.addPlanet(sun3);
+let oregairuPlanet = new Planet("res/imgs/Sun.jpg", 20,
+	new THREE.Vector3(-120, -100, -400), 10, "red");
+oregairuPlanet.addRing(1, 6, null, 0xFFFFFF);
+let oregairuFlag = new Flag(90, 60,
+	null, "res/vids/Oregairu.mp4",
+	1, 120, 0xFFFFFF, "ProjectOregairu", 0, 0,
+	"res/imgs/Icon_Java.png",
+	"res/imgs/Icon_AndroidStudio.png");
+oregairuPlanet.setFlag(oregairuFlag);
+galaxy.addPlanet(oregairuPlanet);
+LoadingScreen.updateCount();
 
 Utils.gltfLoader.load("res/3d/RobotUFO/scene.gltf", ( gltf ) => {
 	galaxy.setPlayer(new Player(gltf.scene, 0.01));
+	LoadingScreen.updateCount();
 });
 
 MainInit.initRoad();
+LoadingScreen.updateCount();
 
 // Event Listeners
 window.addEventListener('resize', () => {
@@ -64,9 +60,6 @@ window.addEventListener('resize', () => {
 
 window.addEventListener('mousedown', (event) => {
 	if (event.button === 0) {
-		// console.log("Mouse Position :", Utils.getMouseScreenPosition());
-		// console.log("Window :", window.innerWidth, window.innerHeight);
-
 		if (Utils.mousePosition.x > 1 - Utils.getScrollbarWidth()) return;
 
 		Utils.isMouseDown = true;
@@ -143,6 +136,20 @@ function animate() {
 MainInit.moveForward(1, true);
 while (!MainInit.doneOneRound) {
 	MainInit.moveForward(MainInit.scrollLengthAdv, true);
+}
+LoadingScreen.updateCount();
+
+while (LoadingScreen.currCount < LoadingScreen.maxCount) {
+	LoadingScreen.updateLoadingScreen();
+
+	await Utils.sleep(100);
+}
+
+let loadingScreen = document.getElementById("loadingScreen");
+let bg = document.getElementById("bg");
+if (loadingScreen != null && bg != null) {
+	loadingScreen.style.display = "none";
+	bg.style.display = "";
 }
 
 animate();

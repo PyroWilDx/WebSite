@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ClickableInterface } from './ClickableInterface.ts';
 import { Flag } from './Flag.ts';
+import { LoadingScreen } from './LoadingScreen.ts';
 import { Planet } from './Planet.ts';
 import { Player } from './Player.ts';
 import { RayCastableInterface } from './RayCastableInterface.ts';
@@ -58,6 +59,7 @@ export class Galaxy {
 
                     this.allStars.push(currStar);
             }
+            LoadingScreen.updateCount();
         });
     }
 

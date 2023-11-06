@@ -43,7 +43,11 @@ export class ToolCube extends RotatingObject implements RayCastableInterface, An
         if (!imgPath.includes("Icon")) return;
 
         if (imgPath.includes("C++")) this.link = "https://isocpp.org/";
+        else if (imgPath.includes("Java")) this.link = "https://www.java.com/fr/";
         else if (imgPath.includes("SDL2")) this.link = "https://www.libsdl.org/";
+        else if (imgPath.includes("Boost")) this.link = "https://www.boost.org/";
+        else if (imgPath.includes("CLion")) this.link = "https://www.jetbrains.com/fr-fr/clion/";
+        else if (imgPath.includes("AndroidStudio")) this.link = "https://developer.android.com/studio";
     }
 
     getObject(): THREE.Object3D {

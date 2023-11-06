@@ -23,6 +23,10 @@ export class Utils {
     public static mousePosition: THREE.Vector2 = new THREE.Vector2(0, 0);
     public static keyMap: { [key: string]: boolean } = {};
     
+    static sleep(ms: number) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
     static getRandomVector3Spread(value: number): THREE.Vector3 {
         let randomVec: THREE.Vector3 = new THREE.Vector3();
         randomVec.x = THREE.MathUtils.randFloatSpread(value);

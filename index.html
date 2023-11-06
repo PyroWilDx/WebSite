@@ -9,7 +9,12 @@
   <body>
     <div id="app"></div>
 
-    <canvas id="bg"></canvas>
+    <div class="loading-screen" id="loadingScreen">
+      <div class="loading-bar" id="loadingBar"></div>
+      <div class="loading-text" id="loadingText">Loading... 0%</div>
+    </div>
+
+    <canvas id="bg" style="display: none;"></canvas>
 
     <main id="main">
 
@@ -30,7 +35,7 @@
           <div class="el-center">
             <img class="src-img-vertical" id="ProjectIdImg" style="width: ??%" src="ProjectImage">
             
-            <video class="src-img-horizontal" id="ProjectIdImg" style="width: ??%" autoplay loop>
+            <video class="src-img-horizontal" id="ProjectIdImg" style="width: ??%" autoplay loop muted>
               <source src="ProjectVideo" type="video/mp4">
             </video>
           </div>
@@ -50,113 +55,63 @@
       </section>
       -->
 
-      <!-- Project Test1 -->
-      <section id="ProjectTest1" style="display: none;">
+      <!-- Project Keqing -->
+      <section id="ProjectKeqing" style="display: none;">
         <div class="el-center">
-          <h2>Project Test1</h2>
+          <h2>Keqing</h2>
           
           <div class="el-center">
-            <a href="" class="button-link" target="_blank">
-              Source Code
-            </a>
-            <a href="" class="button-link" target="_blank">
+            <a href="https://github.com/PyroWilDx/Keqing" class="button-link" target="_blank">
               Source Code
             </a>
           </div>
           
           <div class="el-center">
-            <img class="src-img-vertical" id="ProjectTest1Img" style="width: 80%;" src="res/imgs/SkyDev0.png">
-          </div>
-        </div>
-
-        <p>
-          Technology : C++.
-        </p>
-        
-        <p>
-          Bonjour à tous, je suis la description de ce projet quelconque. Il faut que
-          je parle un peu plus pour tester c'que ça donne sur plusieurs ligne quand même !
-          Donc que pourrais-je dire ?? Hmm.... Ah, bah c'est bon, ça devrait faire assez
-          de ligne maintenant, j'ai rempli mon job. Et tout job mérite salaire ! 
-          Regardez tout l'argent que j'ai accumulé sur cette photo !
-        </p>
-
-        <p>
-          <img src="res/imgs/SkyDev0.png">
-        </p>
-
-        <p>
-          Je suis riche n'est-ce pas ?
-        </p>
-      </section>
-
-      <!-- Project Test2 -->
-      <section id="ProjectTest2" style="display: none;">
-        <div class="el-center">
-          <h2>Project Test2</h2>
-          
-          <div class="el-center">
-            <a href="" class="button-link" target="_blank">
-              Source Code
-            </a>
-            <a href="" class="button-link" target="_blank">
-              Source Code
-            </a>
-          </div>
-        
-          <div class="el-center">
-            <img class="src-img-vertical" id="ProjectTest2Img" style="width: 80%;" src="res/imgs/Flag.png">
-          </div>
-        </div>
-
-        <p>
-          Technology : C++.
-        </p>
-
-        <p>
-          HELLO JE SUIS LE PROJET TEST NUMERO 2 JE SUIS CONTENT.
-        
-          <img src="res/imgs/Flag.png">
-        
-          A BAH BIZARRE MON IMAGE EST LA MEME QUE LE PROJET NUMERO 1.
-          (En fait j'ai menti j'ai changé d'avis)
-        </p>
-      </section>
-
-      <!-- Project Test3 -->
-      <section id="ProjectTest3" style="display: none;">
-        <div class="el-center">
-          <h2>Project Test3</h2>
-          
-          <div class="el-center">
-            <a href="" class="button-link" target="_blank">
-              Source Code
-            </a>
-            <a href="" class="button-link" target="_blank">
-              Source Code
-            </a>
-          </div>
-
-          <div class="el-center">
-            <video class="src-img-horizontal" id="ProjectTest3Img" style="width: 49.2%;" autoplay loop>
-              <source src="res/imgs/Oregairu.mp4" type="video/mp4">
+            <video class="src-img-horizontal" id="ProjectKeqingImg" style="width: 80%;" autoplay loop muted>
+              <source src="res/vids/Keqing.mp4" type="video/mp4">
             </video>
           </div>
         </div>
 
         <p>
-          Technology : C++.
+          Language : C++.<br>
+          Library : SDL2, Boost.<br>
+          Code Editor : CLion.
         </p>
+        
+        <p>
+          Work in Progress...
+        </p>
+      </section>
 
-        <img src="res/imgs/Flag.png">
+      <!-- Project Oregairu -->
+      <section id="ProjectOregairu" style="display: none;">
+        <div class="el-center">
+          <h2>Oregairu</h2>
+          
+          <div class="el-center">
+            <a href="https://github.com/PyroWilDx/Oregairu-SNAFU" class="button-link" target="_blank">
+              Source Code
+            </a>
+            <a href="https://www.mediafire.com/file/lwi4p3m9kevxpdp/Oregairu.apk/file" class="button-link" target="_blank">
+              Download
+            </a>
+          </div>
+
+          <div class="el-center">
+            <video class="src-img-horizontal" id="ProjectOregairuImg" style="width: 49.2%;" autoplay loop muted>
+              <source src="res/vids/Oregairu.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
 
         <p>
-          Oregairu
-        
-          <img src="res/imgs/Flag.png">
-        
-          A BAH BIZARRE MON IMAGE EST LA MEME QUE LE PROJET NUMERO 1.
-          (En fait j'ai menti j'ai changé d'avis)
+          Language : Java.<br>
+          Code Editor : Android Studio.
+        </p>
+
+        <p>
+          Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu Oregairu
         </p>
       </section>
 
