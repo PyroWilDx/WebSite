@@ -2,6 +2,8 @@ scale up blurry
 
 block zooming functions
 
+easter egg : cliquer sur la soucoupe pour commencer a la controler!
+
 BUTTON oR ESCAPE TO GO OUT OF PROJECT
 
 LANGUAGE

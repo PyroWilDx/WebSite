@@ -4,6 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { CameraLerp } from './CameraLerp';
 import { Galaxy } from './Galaxy';
+import { MainInit } from './MainInit';
 import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { ProjectDisplayer, ProjectDisplayerInterface } from './ProjectDisplayerInterface';
 import { Utils } from './Utils';
@@ -22,24 +23,26 @@ export class Scene {
 
     public static scene: THREE.Scene;
     public static camera: THREE.PerspectiveCamera;
+    public static cameraLight: THREE.PointLight;
     public static renderer: THREE.WebGLRenderer;
     public static globalLight: THREE.AmbientLight;
 
     public static effectComposer: EffectComposer;
 
-    public static cameraLerp: CameraLerp | null;
+    public static cameraLerp: CameraLerp | null = null;
+    public static cameraFollowingObj: boolean = false;
 
     public static readonly fadeInDuration: number = 600;
-    public static projectDisplayer: ProjectDisplayer | null;
+    public static projectDisplayer: ProjectDisplayer | null = null;
     public static projBgContainerId: string = "main";
     public static rmDisplayHold: boolean = false;
 
     static initScene(): void {
         Scene.scene = new THREE.Scene();
 
-        Scene.camera  = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight,
+        Scene.camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight,
             0.1, Scene.worldRadius * 2);
-        Scene.camera.position.setZ(30);
+        Scene.camera.position.set(0, 0, 0);
 
         Scene.renderer = new THREE.WebGLRenderer({
             canvas: document.querySelector('#bg')!,
@@ -65,11 +68,11 @@ export class Scene {
         );
         Scene.composerAddPass(bloomPass);
 
-        Scene.cameraLerp = null;
-
-        Scene.projectDisplayer = null;
-
         Scene.galaxy = new Galaxy(Scene.worldRadius);
+
+        Scene.cameraLight = new THREE.PointLight(0xFFFFFF, 600);
+        Scene.cameraLight.position.copy(Scene.camera.position);
+        Scene.addEntity(Scene.cameraLight);
     }
 
     static addEntity(entity: THREE.Object3D): void {
@@ -121,6 +124,7 @@ export class Scene {
 
     static setCameraPosition(position: THREE.Vector3): void {
         Scene.camera.position.copy(position);
+        Scene.cameraLight.position.copy(position);
     }
 
     static addCameraPosition(addX: number, addY: number, addZ: number) {
@@ -151,9 +155,9 @@ export class Scene {
         return Scene.camera;
     }
 
-    static setCameraLerp(finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface): CameraLerp {
+    static setCameraLerp(finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface | null): CameraLerp {
         let lastLookObject = Scene.getCameraLerpObject();
-        
+
         Scene.cameraLerp = new CameraLerp(Scene.camera, finalPosition, lookObject);
 
         if (lastLookObject != null) {
@@ -210,19 +214,18 @@ export class Scene {
             let displayer = Scene.projectDisplayer.displayer;
 
             Scene.projectDisplayer = null;
-            
-            displayer.onProjectHideDisplay();
 
-            let player = Scene.galaxy.getPlayer();
-            if (player != null) {
-                Scene.setCameraLerp(player.getCameraPosition(), player);
-            }
+            displayer.onProjectHideDisplay();
         }
     }
 
     static updateFrame(): void {
         if (Scene.cameraLerp != null) {
             Scene.cameraLerp.updateFrame();
+        } else {
+            if (!Scene.isDisplayingProject()) {
+                Scene.setCameraLerp(MainInit.target.position, MainInit.target);
+            }
         }
         if (Scene.isDisplayingProject()) {
             // @ts-ignore

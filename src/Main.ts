@@ -3,6 +3,7 @@ import TWEEN from '@tweenjs/tween.js';
 import * as THREE from 'three';
 import { Flag } from './Flag.ts';
 import { Galaxy } from './Galaxy.ts';
+import { MainInit } from './MainInit.ts';
 import { Planet } from './Planet.ts';
 import { Player } from './Player.ts';
 import { Scene } from './Scene.ts';
@@ -54,6 +55,8 @@ Utils.gltfLoader.load("res/3d/RobotUFO/scene.gltf", ( gltf ) => {
 	galaxy.setPlayer(new Player(gltf.scene, 0.01));
 });
 
+MainInit.initRoad();
+
 // Event Listeners
 window.addEventListener('resize', () => {
 	Scene.updateRenderSize();
@@ -68,11 +71,11 @@ window.addEventListener('mousedown', (event) => {
 
 		Utils.isMouseDown = true;
 
-		galaxy.updateCurrentHoldFlag();
+		galaxy.updateCurrentHoldObj();
 		
 		if (event.target instanceof HTMLElement) {
 			let id = event.target.id;
-			if (!galaxy.rayCastObjects(true, true) && 
+			if (!galaxy.rayCastObjects(true, true, true) && 
 					id === Scene.projBgContainerId) {
 				Scene.rmDisplayHold = true;
 			}
@@ -84,14 +87,14 @@ window.addEventListener('mouseup', (event) => {
 	if (event.button === 0 ) {
 		if (Utils.mousePosition.x > 1 - ((Utils.getScrollbarWidth() / window.innerWidth) * 2)) return;
 
-		galaxy.checkFlagOnMouseUp();
+		galaxy.checkObjOnMouseUp();
 
 		Utils.isMouseDown = false;
 
 		if (event.target instanceof HTMLElement) {
 			let id = event.target.id;
 			if (Scene.rmDisplayHold && 
-					!galaxy.rayCastObjects(true, true) &&
+					!galaxy.rayCastObjects(true, true, true) &&
 					id === Scene.projBgContainerId) {
 				Scene.removeProjectDisplayer();
 			}
@@ -102,6 +105,12 @@ window.addEventListener('mouseup', (event) => {
 
 window.addEventListener('mousemove', (event) => {
 	Utils.updateMousePosition(event);
+});
+
+window.addEventListener("wheel", (event) => {
+	if (Scene.cameraFollowingObj) {
+		MainInit.moveForward(MainInit.scrollLengthAdv, event.deltaY >= 0);
+	}
 });
 
 window.addEventListener("keydown", function(event) {
@@ -129,6 +138,11 @@ function animate() {
 	galaxy.updateFrame();
 
 	Scene.updateFrame();
+}
+
+MainInit.moveForward(1, true);
+while (!MainInit.doneOneRound) {
+	MainInit.moveForward(MainInit.scrollLengthAdv, true);
 }
 
 animate();

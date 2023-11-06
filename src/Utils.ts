@@ -175,12 +175,18 @@ export class Utils {
       
         return (1.1 * scrollbarWidth / window.innerWidth) * 2
       
-      }
+    }
 
     static implementsRayCastable(obj: THREE.Object3D): boolean {
         return (
             'onRayCast' in obj && typeof obj.onRayCast === 'function' &&
             'onRayCastLeave' in obj && typeof obj.onRayCastLeave === 'function'
+        );
+    }
+
+    static implementsClickable(obj: THREE.Object3D): boolean {
+        return (
+            'onClick' in obj && typeof obj.onClick === 'function'
         );
     }
 
@@ -206,9 +212,10 @@ export class Utils {
     }
 
     static getObjectBehindPosition(frontObj: THREE.Object3D, 
-            distance: number, ignoreRotation: boolean = false): THREE.Vector3 {
+            distance: number, customRotation: THREE.Euler | null = null): THREE.Vector3 {
         let rot = frontObj.rotation.clone();
-        if (ignoreRotation) frontObj.rotation.set(0, 0, 0);
+
+        if (customRotation != null) frontObj.rotation.copy(customRotation);
 
         let resPosition = new THREE.Vector3();
         frontObj.getWorldPosition(resPosition);
@@ -218,16 +225,16 @@ export class Utils {
     
         resPosition.add(offset);
 
-        if (ignoreRotation) frontObj.rotation.copy(rot);
+        if (customRotation != null) frontObj.rotation.copy(rot);
 
         return resPosition;
     }
 
     static positionObjectBehind(frontObj: THREE.Object3D, behindObj: THREE.Object3D,
-            distance: number, ignoreRotation: boolean = false) {
-        if (!ignoreRotation) behindObj.rotation.copy(frontObj.rotation);
+            distance: number, customRotation: THREE.Euler | null = null) {
+        if (customRotation != null) behindObj.rotation.copy(customRotation);
+        else behindObj.rotation.copy(frontObj.rotation);
 
-        behindObj.position.copy(Utils.getObjectBehindPosition(frontObj, distance, ignoreRotation));
+        behindObj.position.copy(Utils.getObjectBehindPosition(frontObj, distance, customRotation));
     }
-
 }

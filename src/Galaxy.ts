@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ClickableInterface } from './ClickableInterface.ts';
 import { Flag } from './Flag.ts';
 import { Planet } from './Planet.ts';
 import { Player } from './Player.ts';
@@ -15,8 +16,8 @@ export class Galaxy {
 
     private lastRayCastTime: number;
 
-    private currHoldFlag: Flag | null;
-    private currFlag: Flag | null;
+    private currHoldObj: ClickableInterface | null;
+    private currObj: ClickableInterface | null;
 
     private rayCastedObjects: RayCastableInterface[];
 
@@ -28,8 +29,8 @@ export class Galaxy {
 
         this.lastRayCastTime = 0;
 
-        this.currHoldFlag = null;
-        this.currFlag = null;
+        this.currHoldObj = null;
+        this.currObj = null;
     
         this.rayCastedObjects = [];
     }
@@ -72,31 +73,36 @@ export class Galaxy {
         return this.player;
     }
 
-    updateCurrentHoldFlag(): void {
+    updateCurrentHoldObj(): void {
         this.rayCastObjects(true);
-        this.currHoldFlag = this.currFlag;
+        this.currHoldObj = this.currObj;
     }
 
-    rayCastObjects(justFindFirstFlag: boolean = false, 
-            justFindFirstObject: boolean = false): boolean {
+    rayCastObjects(justFindFirstClickable: boolean = false, 
+            justFindFirstObject: boolean = false,
+            ignoreFlags: boolean = false): boolean {
         Utils.rayCaster.setFromCamera(Utils.mousePosition, Scene.camera);
         const intersected = Utils.rayCaster.intersectObjects(Scene.getChildren());
 
-        let foundFlag = false;
+        let foundClickable = false;
         const currCastedObjects: RayCastableInterface[] = []
 
         for (let i = 0; i < intersected.length; i++) {
             const obj = intersected[i].object;
 
             if (Utils.implementsRayCastable(obj)) {
-                if (justFindFirstObject) return true;
+                if (justFindFirstObject) {
+                    if (ignoreFlags && obj instanceof Flag) return false;
+                    return true;
+                }
 
-                if (obj instanceof Flag) {
-                    if (foundFlag) continue;
-                    this.currFlag = obj as Flag;
-                    foundFlag = true;
+                if (Utils.implementsClickable(obj)) {
+                    if (foundClickable) continue;
+                    // @ts-ignore
+                    this.currObj = obj as ClickableInterface;
+                    foundClickable = true;
 
-                    if (justFindFirstFlag) return true;
+                    if (justFindFirstClickable) return true;
                 }
 
                 // @ts-ignore
@@ -110,9 +116,9 @@ export class Galaxy {
             }
         }
 
-        if (!foundFlag) this.currFlag = null;
+        if (!foundClickable) this.currObj = null;
 
-        if (justFindFirstFlag) return false;
+        if (justFindFirstClickable) return false;
 
         for (const lastCastedObj of this.rayCastedObjects) {
             if (!currCastedObjects.includes(lastCastedObj)) {
@@ -134,12 +140,24 @@ export class Galaxy {
         this.lastRayCastTime = currTime;
     }
 
-    checkFlagOnMouseUp(): void {
-        if (this.currHoldFlag != null) {
-            if(this.rayCastObjects(true) && this.currHoldFlag == this.currFlag) {
-                this.currHoldFlag.onClick();
+    checkObjOnMouseUp(): void {
+        if (this.currHoldObj != null) {
+            if (this.rayCastObjects(true) && this.currHoldObj == this.currObj) {
+                this.currHoldObj.onClick();
             }
         }
+    }
+
+    playerCollidesPlanet(): boolean {
+        if (this.player == null) return false;
+
+        for (const currPlanet of this.allPlanets) {
+            if (this.player.getBox().intersectsSphere(currPlanet.getSphere())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     updateFrame(): void {

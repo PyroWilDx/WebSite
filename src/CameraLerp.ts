@@ -12,13 +12,16 @@ export class CameraLerp {
     private camera: THREE.PerspectiveCamera;
     private finalPosition: THREE.Vector3;
     private lookPosition: THREE.Vector3 | null;
-    private lookObject: ObjectLookedInterface;
+    private lookQuaternion: THREE.Quaternion | null;
+    private lookObject: ObjectLookedInterface | null;
     
     private distEpsilon: number;
     private rotEpsilon: number;
 
+    private maxDist: number;
+
     constructor(camera: THREE.PerspectiveCamera,
-            finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface) {
+            finalPosition: THREE.Vector3, lookObject: ObjectLookedInterface | null) {
         this.lerpSpeed = 0.026;
         this.rotateSpeed = 0.08;
 
@@ -27,33 +30,44 @@ export class CameraLerp {
         this.camera = camera;
         this.finalPosition = finalPosition;
         this.lookPosition = null;
+        this.lookQuaternion = null;
         this.lookObject = lookObject;
         
         this.distEpsilon = 1;
-        this.rotEpsilon = 0.002
+        this.rotEpsilon = 0.002;
 
-        this.lookObject.onLookStart(this);
-    }
+        this.maxDist = 0;
+
+        if (this.lookObject != null) this.lookObject.onLookStart(this);
+    } 
 
     updateFrame() {
-        this.camera.position.lerp(this.finalPosition, this.lerpSpeed * Utils.dt);
-
-        let tmpCam = this.camera.clone();
-        
-        if (this.lookAtObject) {
-            let lookAtPos: THREE.Vector3;
-            if (this.lookPosition != null) lookAtPos = this.lookPosition;
-            else lookAtPos = this.lookObject.getObjectPosition();
-            tmpCam.lookAt(lookAtPos);
+        if (this.camera.position.distanceTo(this.finalPosition) > this.maxDist) {
+            this.camera.position.lerp(this.finalPosition, this.lerpSpeed * Utils.dt);
         }
-        
-        this.camera.quaternion.slerp(tmpCam.quaternion, this.rotateSpeed * Utils.dt);
 
-        this.lookObject.onLookProgress(this);
+        let cmpQuaternion: THREE.Quaternion;
+        if (this.lookQuaternion != null) {
+            this.camera.quaternion.slerp(this.lookQuaternion, this.rotateSpeed * Utils.dt);
+            cmpQuaternion = this.lookQuaternion;
+        } else {
+            let tmpCam = this.camera.clone();
+            
+            if (this.lookAtObject) {
+                let lookAtPos = new THREE.Vector3(0, 0, 0);
+                if (this.lookPosition != null) lookAtPos = this.lookPosition;
+                else if (this.lookObject != null) lookAtPos = this.lookObject.getObjectPosition();
+                tmpCam.lookAt(lookAtPos);
+            }
+            this.camera.quaternion.slerp(tmpCam.quaternion, this.rotateSpeed * Utils.dt);
+            cmpQuaternion = tmpCam.quaternion;
+        }
+
+        if (this.lookObject != null) this.lookObject.onLookProgress(this);
 
         if (this.camera.position.distanceTo(this.finalPosition) < this.distEpsilon &&
-                Math.abs(this.camera.quaternion.dot(tmpCam.quaternion)) > 1 - this.rotEpsilon) {
-            this.lookObject.onLookEnd();
+                Math.abs(this.camera.quaternion.dot(cmpQuaternion)) > 1 - this.rotEpsilon) {
+            if (this.lookObject != null) this.lookObject.onLookEnd();
             Scene.removeCameraLerp();
         }
     }
@@ -61,6 +75,11 @@ export class CameraLerp {
     setSpeeds(lerpSpeed: number, rotateSpeed: number): void {
         this.lerpSpeed = lerpSpeed;
         this.rotateSpeed = rotateSpeed;
+    }
+
+    multiplySpeeds(factor: number): void {
+        this.lerpSpeed *= factor;
+        this.rotateSpeed *= factor;
     }
 
     setLookAtObject(lookAtObject: boolean): void {
@@ -76,11 +95,19 @@ export class CameraLerp {
         this.finalPosition = finalPosition;
     }
 
-    setLookPosition(lookPosition: THREE.Vector3): void {
+    setLookPosition(lookPosition: THREE.Vector3 | null): void {
         this.lookPosition = lookPosition;
     }
 
-    getLookObject(): ObjectLookedInterface {
+    setLookQuaternion(lookQuaternion: THREE.Quaternion | null): void {
+        this.lookQuaternion = lookQuaternion;
+    }
+
+    setMaxDist(maxDist: number): void {
+        this.maxDist = maxDist;
+    }
+
+    getLookObject(): ObjectLookedInterface | null {
         return this.lookObject;
     }
 

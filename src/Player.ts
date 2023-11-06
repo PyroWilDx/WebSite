@@ -13,13 +13,14 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
 
     private playerLocked: boolean;
 
-    private movingElapsedTime: number;
     private realY: number;
 
-    constructor(playerModel: THREE.Group<THREE.Object3DEventMap>, scale: number) {
+    private box: THREE.Box3;
+
+    constructor(playerModel: THREE.Group<THREE.Object3DEventMap> | null, scale: number) {
         super();
 
-        this.add(playerModel);
+        if (playerModel != null) this.add(playerModel);
         this.position.set(0, 0, 0);
         this.scale.set(scale, scale, scale);
 
@@ -32,12 +33,12 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
             6000, 0, 1.6);
         Scene.addEntity(this.playerLight);
 
-        this.playerLocked = false;
+        this.playerLocked = true;
 
-        this.movingElapsedTime = 0;
         this.realY = 0;
 
-        Scene.setCameraLerp(this.getCameraPosition(), this);
+        this.box = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+        this.box.setFromObject(this);
     }
 
     getObjectPosition(): THREE.Vector3 {
@@ -46,30 +47,30 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
 
     onLookStart(cameraLerp: CameraLerp): void {
         this.playerLocked = false;
-
-        Scene.setCameraRotation(new THREE.Vector3(0, 0, 0));
-
-        cameraLerp.setEpsilons(0, 0);
-        cameraLerp.setLookAtObject(false);
-        cameraLerp.setSpeeds(0.08, 0);
     }
 
     onLookProgress(cameraLerp: CameraLerp): void {
         cameraLerp.setFinalPosition(this.getCameraPosition());
+        cameraLerp.setLookPosition(this.getLookPosition());
     }
 
     onLookEnd(): void {
-
+        this.playerLocked = true;
     }
 
     onLookInterruption(): void {
-        
+        this.playerLocked = true;
     }
 
     getCameraPosition(): THREE.Vector3 {
-        let resPosition = Utils.getObjectBehindPosition(this, -30, true);
-        // resPosition.x += 20;
-        resPosition.y = this.realY + Player.addCameraHeight;
+        let resPosition = Utils.getObjectBehindPosition(this, -20);
+        // resPosition.y = this.realY + Player.addCameraHeight;
+        resPosition.y += Player.addCameraHeight;
+        return resPosition;
+    }
+
+    getLookPosition(): THREE.Vector3 {
+        let resPosition = this.position.clone();
         return resPosition;
     }
 
@@ -98,6 +99,9 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
     updateFrame(): void {
         this.rotation.y += 0.01;
 
+        // let lastPosition = this.position.clone();
+        // let lastRealY = this.realY;
+
         if (!this.playerLocked) {
             let forward = Utils.isKeyPressed('z') || Utils.isKeyPressed('Z');
             let backward = Utils.isKeyPressed('s') || Utils.isKeyPressed('S');
@@ -105,7 +109,6 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
             let left = Utils.isKeyPressed('q') || Utils.isKeyPressed('Q');
             let up = Utils.isKeyPressed(" ");
             let down = Utils.isKeyPressed("Shift");
-            let moved = forward || backward || right || left;
 
             if (forward) this.addPositionZ(-this.playerSpeed.z * Utils.dt);
             if (backward) this.addPositionZ(this.playerSpeed.z * Utils.dt);
@@ -114,7 +117,17 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
             if (up) this.addPositionY(this.playerSpeed.y * Utils.dt);
             if (down) this.addPositionY(-this.playerSpeed.y * Utils.dt);
 
-            if (moved) this.movingElapsedTime += Utils.dt;
+            let truePos = this.position.clone();
+            this.position.set(this.position.x, this.realY, this.position.z);
+            this.box.setFromObject(this);
+            this.position.copy(truePos);
+
+            // if (forward || backward || right || left || up || down) {
+            //     if (Scene.galaxy.playerCollidesPlanet()) {
+            //         this.position.copy(lastPosition);
+            //         this.realY = lastRealY;
+            //     }
+            // }
         }
 
         this.position.y = this.realY + 4 * Math.sin(Utils.getElapsedTime());
@@ -122,8 +135,8 @@ export class Player extends THREE.Group<THREE.Object3DEventMap> implements Objec
         this.playerLight.position.copy(this.position);
     }
 
-    setPlayerLocked(playerLocked: boolean): void {
-        this.playerLocked = playerLocked;
+    getBox(): THREE.Box3 {
+        return this.box;
     }
 
 }

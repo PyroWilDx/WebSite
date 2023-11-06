@@ -10,6 +10,8 @@ export class Planet extends RotatingObject {
     private rings: RotatingObject[];
     private flag: Flag | null;
 
+    public sphere: THREE.Sphere;
+
     constructor(imgPath: string, radius: number,
             position: THREE.Vector3, emissiveIntensity: number = 0,
             emissiveColor: THREE.ColorRepresentation = 0x0) {
@@ -35,6 +37,8 @@ export class Planet extends RotatingObject {
 
         this.rings = [];
         this.flag = null;
+
+        this.sphere = new THREE.Sphere(this.position, this.radius);
     }
 
     addRing(start: number, length: number, texturePath: string | null,
@@ -94,6 +98,10 @@ export class Planet extends RotatingObject {
 
     getFlag(): Flag | null {
         return this.flag;
+    }
+
+    getSphere(): THREE.Sphere {
+        return this.sphere;
     }
 
 }

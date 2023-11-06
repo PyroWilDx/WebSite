@@ -1,17 +1,20 @@
 import * as THREE from 'three';
 import { AnimatableInterface } from './AnimatableInterface';
+import { ClickableInterface } from './ClickableInterface';
 import { CustomAnimation } from './CustomAnimation';
 import { RayCastableInterface } from './RayCastableInterface';
 import { RotatingObject } from "./RotatingObject";
 import { Scene } from './Scene';
 import { Utils } from "./Utils";
 
-export class ToolCube extends RotatingObject implements RayCastableInterface, AnimatableInterface {
+export class ToolCube extends RotatingObject implements RayCastableInterface, AnimatableInterface,
+        ClickableInterface {
     public static readonly cubeSize: number = 10;
 
     public beingAnimated: boolean;
 
     private light: THREE.PointLight;
+    private link: string;
 
     constructor(imgPath: string) {
         let cubeTexture = Utils.textureLoader.load(imgPath);
@@ -31,6 +34,16 @@ export class ToolCube extends RotatingObject implements RayCastableInterface, An
 
         this.light = new THREE.PointLight(0xFFFFFF, 400);
         Scene.addEntity(this.light);
+
+        this.link = "";
+        this.initLink(imgPath);
+    }
+
+    initLink(imgPath: string) {
+        if (!imgPath.includes("Icon")) return;
+
+        if (imgPath.includes("C++")) this.link = "https://isocpp.org/";
+        else if (imgPath.includes("SDL2")) this.link = "https://www.libsdl.org/";
     }
 
     getObject(): THREE.Object3D {
@@ -42,7 +55,16 @@ export class ToolCube extends RotatingObject implements RayCastableInterface, An
     }
 
     onRayCastLeave(): void {
-        CustomAnimation.focusBigAnimation(this, 200, false);
+        CustomAnimation.focusBigAnimation(this, 200, false, true);
+    }
+
+    onClick(): void {
+        let openedTab = window.open(this.link, "_blank");
+        if (openedTab) {
+            openedTab.blur();
+            window.focus();
+        }
+        this.onRayCastLeave();
     }
 
     addSelf(): void {

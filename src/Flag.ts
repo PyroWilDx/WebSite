@@ -4,6 +4,7 @@ import flagGlowFragmentShader from './../res/shaders/flagGlowFragment.glsl';
 // @ts-ignore
 import flagGlowVertexShader from './../res/shaders/flagGlowVertex.glsl';
 import { CameraLerp } from './CameraLerp';
+import { ClickableInterface } from './ClickableInterface';
 import { CustomAnimation } from './CustomAnimation';
 import { ObjectLookedInterface } from './ObjectLookedInterface';
 import { ProjectDisplayerInterface } from './ProjectDisplayerInterface';
@@ -12,7 +13,8 @@ import { Scene } from './Scene';
 import { ToolCube } from './ToolCube';
 import { Utils } from './Utils';
 
-export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLookedInterface, ProjectDisplayerInterface {
+export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLookedInterface, 
+        ProjectDisplayerInterface, ClickableInterface {
     public static readonly flagLerpDistance: number = 40;
     
     private flagVidTexture: THREE.VideoTexture | null;
@@ -144,9 +146,6 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
 
     onLookStart(_cameraLerp: CameraLerp): void {
         this.glowEffect(true);
-
-        let player = Scene.galaxy.getPlayer();
-        if (player != null) player.setPlayerLocked(true);
     }
 
     onLookProgress(_cameraLerp: CameraLerp): void {
@@ -181,7 +180,7 @@ export class Flag extends THREE.Mesh implements RayCastableInterface, ObjectLook
 
             for (const toolCube of this.toolCubes) {
                 toolCube.addSelf();
-                CustomAnimation.popInAnimation(toolCube, 1000);
+                CustomAnimation.popInAnimation(toolCube, 800);
             }
 
             this.glowEffect(false, true);

@@ -1,0 +1,222 @@
+import * as THREE from 'three';
+import { CameraFollowObject } from './CameraFollowObject';
+import { Scene } from './Scene';
+import { Utils } from './Utils';
+
+export class MainInit {
+
+    private static readonly curvePoints: number[] = [
+        0, 0, 0,
+        -200, -40, -200,
+        -300, 0, -400,
+        -300, 0, -500,
+        0, 0, 0,
+    ];
+
+    private static readonly ls: number = 1400;
+    private static readonly lss: number = MainInit.ls + 1;
+
+    private static t: THREE.Vector3[] = [];
+    private static n: THREE.Vector3[] = [];
+    private static b: THREE.Vector3[] = [];
+
+    private static points: THREE.Vector3[];
+
+    public static target: CameraFollowObject = new CameraFollowObject();
+
+    static initRoad() {
+        const pts = [];    
+        for (let i = 0; i < MainInit.curvePoints.length; i += 3) {
+            pts.push(new THREE.Vector3(MainInit.curvePoints[i], 
+                MainInit.curvePoints[i + 1], MainInit.curvePoints[i + 2]));
+        }
+        
+        const ws = 5;
+        const wss = ws + 1;
+        
+        const curve = new THREE.CatmullRomCurve3(pts);
+        MainInit.points = curve.getPoints(MainInit.ls);
+        const len = curve.getLength();
+        const lenList = curve.getLengths (MainInit.ls);
+        
+        const faceCount = MainInit.ls * ws * 2;
+        const vertexCount = MainInit.lss * wss;
+        
+        const indices = new Uint32Array(faceCount * 3);
+        const vertices = new Float32Array(vertexCount * 3);
+        const uvs = new Float32Array(vertexCount * 2);
+        
+        const g = new THREE.BufferGeometry();
+        g.setIndex(new THREE.BufferAttribute(indices, 1));	
+        g.setAttribute('position', new THREE.BufferAttribute(vertices, 3 ));
+        g.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+        
+        let idxCount = 0;
+        let a, b1, c1, c2;
+        
+        for (let j = 0; j < MainInit.ls; j ++) {
+            for (let i = 0; i < ws; i ++) {
+                a =  wss * j + i;
+                b1 = wss * (j + 1) + i;
+                c1 = wss * (j + 1) + i + 1;
+                c2 = wss * j + i + 1;
+                
+                indices[idxCount] = a;
+                indices[idxCount + 1] = b1;
+                indices[idxCount + 2] = c1; 
+                
+                indices[idxCount + 3] = a;
+                indices[idxCount + 4] = c1;
+                indices[idxCount + 5] = c2; 
+                
+                g.addGroup(idxCount, 6, i);
+                
+                idxCount += 6;
+            }
+        }
+        
+        let uvIdxCount = 0;
+        for ( let j = 0; j < MainInit.lss ; j ++ ) {
+            for ( let i = 0; i < wss; i ++ ) {
+                uvs[uvIdxCount] = lenList[j] / len;
+                uvs[uvIdxCount + 1] = i / ws;
+    
+                uvIdxCount += 2;
+            }
+        }
+        
+        let x, y, z;
+        let posIdx = 0;
+        
+        let tangent;
+        const normal = new THREE.Vector3();
+        const binormal = new THREE.Vector3(0, 1, 0);
+        
+        for ( let j = 0; j < MainInit.lss; j ++ ) {
+            tangent = curve.getTangent(j / MainInit.ls);
+            MainInit.t.push(tangent.clone());
+            
+            normal.crossVectors(tangent, binormal);
+            
+            normal.y = 0;
+            
+            normal.normalize();
+            MainInit.n.push(normal.clone());
+            
+            binormal.crossVectors(normal, tangent);
+            MainInit.b.push(binormal.clone());	
+            
+        }
+        
+        const dw = [-12, -10, -1, 1, 10, 12];
+        
+        for ( let j = 0; j < MainInit.lss; j ++ ) {
+            for ( let i = 0; i < wss; i ++ ) {
+                x = MainInit.points[j].x + dw[i] * MainInit.n[j].x;
+                y = MainInit.points[j].y;
+                z = MainInit.points[j].z + dw[i] * MainInit.n[j].z;		 
+    
+                vertices[posIdx] = x;
+                vertices[posIdx + 1] = y;
+                vertices[posIdx + 2] = z;
+    
+                posIdx += 3;
+            }
+        }
+        
+        const tex = new THREE.TextureLoader().load("res/imgs/Rainbow.png");
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.repeat.set(MainInit.ls * 2, 0);
+        const eIntensity = 10;
+
+        const material = [
+            new THREE.MeshStandardMaterial({
+                color: 0xFFFFFF,
+                side: THREE.DoubleSide,
+                emissiveIntensity: eIntensity,
+                emissive: 0xFFFFFF
+            }),
+            new THREE.MeshStandardMaterial({
+                color: 0x111111,
+                side: THREE.DoubleSide,
+                emissiveIntensity: eIntensity,
+                emissive: 0x111111
+            }),
+            new THREE.MeshStandardMaterial({
+                map: tex,
+                side: THREE.DoubleSide,
+                emissiveIntensity: eIntensity,
+                emissive: 0xFFFFFF,
+                emissiveMap: tex
+            }),
+            new THREE.MeshStandardMaterial({
+                color: 0x111111,
+                side: THREE.DoubleSide,
+                emissiveIntensity: eIntensity,
+                emissive: 0x111111
+            }),
+            new THREE.MeshStandardMaterial({
+                color: 0xFFFFFF,
+                side: THREE.DoubleSide,
+                emissiveIntensity: eIntensity,
+                emissive: 0xFFFFFF
+            }),
+        ];
+        
+        const roadMesh = new THREE.Mesh(g, material);
+        Scene.addEntity(roadMesh);
+    }
+
+    private static M3 = new THREE.Matrix3();
+    private static M4 = new THREE.Matrix4();
+    public static i = 0;
+    public static readonly scrollLengthAdv: number = 20;
+    public static forward: boolean = false;
+    public static doneOneRound: boolean = false;
+    public static quaternionList: THREE.Quaternion[] = [];
+
+    static moveForward(length: number, forward: boolean) {
+        MainInit.forward = forward;
+        if (forward) {
+            MainInit.i += length;
+            if (MainInit.i >= MainInit.lss) {
+                MainInit.doneOneRound = true;
+                MainInit.i = MainInit.i - MainInit.lss;
+            }
+        } else {
+            MainInit.i -= length;
+            if (MainInit.i < 0) {
+                if (MainInit.doneOneRound) MainInit.i = MainInit.lss + MainInit.i;
+                else MainInit.i = 0;
+            }
+        }
+
+        let t = MainInit.t;
+        let b = MainInit.b;
+        let n = MainInit.n;
+
+        MainInit.M3.set(
+            t[MainInit.i].x, b[MainInit.i].x, n[MainInit.i].x,
+            t[MainInit.i].y, b[MainInit.i].y, n[MainInit.i].y,
+            t[MainInit.i].z, b[MainInit.i].z, n[MainInit.i].z
+        );
+        MainInit.M4.setFromMatrix3(MainInit.M3);
+        MainInit.target.rotation.setFromRotationMatrix(MainInit.M4);
+        MainInit.target.rotateY(-Math.PI / 2);
+
+        let points = MainInit.points;
+        MainInit.target.position.set(
+            points[MainInit.i].x + 0.18 * n[MainInit.i].x,
+            points[MainInit.i].y + 10,
+            points[MainInit.i].z + 0.18 * n[MainInit.i].z
+        );
+
+        if (!MainInit.doneOneRound) {
+            let tmpCam = Scene.camera.clone();
+            let finalPosition = Utils.getObjectBehindPosition(MainInit.target, -MainInit.scrollLengthAdv);
+            tmpCam.position.copy(finalPosition);
+            tmpCam.lookAt(MainInit.target.position);
+            MainInit.quaternionList.push(tmpCam.quaternion.clone());
+        }
+    }
+}

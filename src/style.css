@@ -76,13 +76,11 @@ p {
 }
 
 .el-center .src-img-vertical {
-    /* width: 80%; */
     height: auto;
     margin: 8 auto;
 }
 
 .el-center .src-img-horizontal {
-    /* width: 49.2%; */
     height: auto;
     margin: 8 auto;
 }
